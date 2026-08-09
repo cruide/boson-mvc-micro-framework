@@ -1,0 +1,8 @@
+<div class="jumbotron">
+<?php if( auth()->check() ) { ?>
+<h2>Вы успешно авторизовались в системе!</h2>
+<?php } else { ?>
+<h2>Добро пожаловать!</h2><br />
+Логи: user@test.local, Пароль: test
+<?php } ?>
+</div>

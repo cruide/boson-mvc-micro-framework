@@ -1,0 +1,27 @@
+server {
+    listen 80;
+    server_name example.com;
+    root /var/www/html;
+    index index.php;
+
+    charset utf-8;
+    autoindex off;
+
+    location / {
+        try_files $uri $uri/ /index.php;
+    }
+
+    # Разрешаем только index.php
+    location = /index.php {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        # должна соответствовать вашему PHP-FPM сокету или порту
+        # fastcgi_pass 127.0.0.1:9000;
+        fastcgi_pass unix:/run/php/php-fpm.sock;
+    }
+
+    # Запрещаем доступ к остальным php и чувствительным файлам
+    location ~* \.(log|ini|json|phtml|tpl|php|lock|md|dist|rst)$ {
+        deny all;
+    }
+}

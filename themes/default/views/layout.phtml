@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="Tishchenko Alexander">
+
+        <title>Пример APP на Boson</title>
+
+        <script type="text/javascript" src="<?=$js_url?>/jquery-3.3.1.min.js"></script>
+
+        <!-- Bootstrap core CSS -->
+        <link href="<?=$css_url?>/bootstrap.min.css" rel="stylesheet" />
+        <link href="<?=$css_url?>/bootstrap-theme.min.css" rel="stylesheet" />
+
+        <!-- Custom styles for this template -->
+        <link href="<?=$css_url?>/style.css" rel="stylesheet">
+
+        <!-- Just for debugging purposes. Don't actually copy this line! -->
+        <!--[if lt IE 9]>
+        <script src="<?=$js_url?>/ie8-responsive-file-warning.js"></script>
+        <![endif]-->
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+        <script src="<?=$js_url?>/html5shiv.js"></script>
+        <script src="<?=$js_url?>/respond.min.js"></script>
+        <![endif]-->
+    </head>
+
+    <body>
+
+        <div class="container">
+            <div class="header" style="margin-bottom: 0;">
+                <ul class="nav nav-pills pull-right">
+                    <li>
+                        <a href="<?=$base_url?>">
+                            <span class="glyphicon glyphicon-home"></span>&nbsp;
+                            <?=str_ucfirst( i18n('home') )?>
+                        </a>
+                    </li>
+                    
+                    <?php if( !auth()->check() ) { ?>
+                    <li>
+                        <a id="login-button" style="cursor: pointer;">
+                            <span class="glyphicon glyphicon-log-in"></span>&nbsp;
+                            <?=str_ucfirst( i18n('authorization') )?>
+                        </a>
+                    </li>
+                    <li>
+                        <a id="register-button" style="cursor: pointer;">
+                            <span class="glyphicon glyphicon-log-in"></span>&nbsp;
+                            <?=str_ucfirst( i18n('registration') )?>
+                        </a>
+                    </li>
+                    <?php } else { ?>
+                    <li>
+                        <a onclick="logout()" style="cursor: pointer;">
+                            <span class="glyphicon glyphicon-log-out"></span>&nbsp;
+                            <?=str_ucfirst( i18n('exit') )?>
+                        </a>
+                    </li>
+                    <script type="text/javascript">
+                    var logout = function() {
+                        jsonRequest('/logout', function(r) {
+                            if( typeof(r.status) != 'undefined' && r.status == 'success' ) {
+                                window.location.href = '/';
+                            } else {
+                                alert('Что-то пошло не так...');
+                            }
+                        });
+                    };
+                    </script>
+                    <?php } ?>
+                </ul>
+                
+                <h1 class="text-muted">
+                    Пример работы Boson
+                </h1>
+            </div>
+
+            <div class="row marketing" id="main-content" style="margin-top: 0;">
+            <?php echo $content; ?>
+            </div>
+            
+            <div class="footer">
+                <p>Alex Tisch &copy; 2020</p>
+            </div>
+        </div> <!-- /container -->
+        <div id="body-script-buffer"></div>
+
+        <script type="text/javascript" src="<?=$js_url?>/bootstrap.min.js"></script>
+        <script type="text/javascript">
+        var jsonRequest = function(url, params, callback) {
+            if( typeof(url) == 'undefined' || url == '' ) {
+                return;
+            }
+            
+            if( typeof(params) == 'undefined' || params == '' ) {
+                params = {};
+                
+            } else if( typeof(params) == 'function' ) {
+                callback = params;
+                params   = {};
+            }
+            
+            $.ajax({
+                type: 'POST', data: params, dataType: 'json', 
+                url: url, cache: false,
+                success: function(result) { 
+                    if( typeof(callback) == 'function' ) {
+                        callback(result);
+                    } 
+                }, 
+                
+                error: function(jqXHR, textStatus, errorThrown) {
+                    if( typeof(console) != 'undefined' && typeof(console) != '' ) { 
+                        console.log('Request ajax to `' + url + '` returned an error'); 
+                    }
+                }
+            });
+        };
+        </script>
+        
+        <?php if( !auth()->check() ) { ?>
+        <div class="modal fade" id="authorization-modal">
+            <div class="modal-dialog" style="width: 350px;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Авторизация</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form" role="form" id="auth-form">
+                            <div class="form-group">
+                                <label for="exampleLogin">Email</label>
+                                <input type="email" class="form-control" id="exampleLogin" maxlength="255" />
+                            </div>    
+                            <div class="form-group">
+                                <label for="examplePassword">Password</label>
+                                <input type="password" class="form-control" id="examplePassword" maxlength="16" />
+                            </div>    
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="rememberme" id="exampleRememberme" value="1" /> Запомнить меня
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            <span class="glyphicon glyphicon-remove"></span>
+                            Отмена
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="authorization()">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            Вход
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="registration-modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Регистрация</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form" role="form" id="auth-form">
+                            <div class="form-group">
+                                <label for="exampleRegLogin">Email</label>
+                                <input type="email" class="form-control" id="exampleRegLogin" maxlength="255" />
+                            </div>    
+                            <div class="form-group">
+                                <label for="exampleRegName">Имя</label>
+                                <input type="text" class="form-control" id="exampleRegName" maxlength="255" />
+                            </div>    
+                            <div class="form-group">
+                                <label for="exampleRegPwd1">Пароль</label>
+                                <input type="password" class="form-control" id="exampleRegPwd1" maxlength="16" />
+                            </div>    
+                            <div class="form-group">
+                                <label for="exampleRegPwd2">Повторите пароль</label>
+                                <input type="password" class="form-control" id="exampleRegPwd2" maxlength="16" />
+                            </div>    
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            <span class="glyphicon glyphicon-remove"></span>
+                            Отмена
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="registration()">
+                            <span class="glyphicon glyphicon-ok"></span>
+                            Регистрация
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script type="text/javascript">
+        var authorization = function() {
+            var form_data = {
+                login: $('#exampleLogin').val(),
+                password: $('#examplePassword').val(),
+                rememberme: $('#exampleRememberme').is(':checked') ? 1 : 0,
+            };
+            
+            jsonRequest('/login', {data: JSON.stringify(form_data)}, function(r) {
+                if( typeof(r.status) != 'undefined' && r.status == 'success' ) {
+                    window.location.href = '/';
+                } else if( typeof(r.status) != 'undefined' && r.status == 'error' ) {
+                    alert('Ошибка: ' + r.data.errorText);
+                }
+            });
+        };
+
+        var registration = function() {
+            var form_data = {
+                login: $('#exampleRegLogin').val(),
+                name: $('#exampleRegName').val(),
+                pwd1: $('#exampleRegPwd1').val(),
+                pwd2: $('#exampleRegPwd2').val(),
+            };
+            
+            if( form_data.login == '' || form_data.name == '' ) {
+                alert('все поля обязательны...');
+                return;
+            }
+
+            if( form_data.pwd1 != form_data.pwd2 ) {
+                alert('Пароли не совпадают...');
+                return;
+            }
+            
+            jsonRequest('/register', {data: JSON.stringify(form_data)}, function(r) {
+                if( typeof(r.status) != 'undefined' && r.status == 'success' ) {
+                    window.location.href = '/';
+                } else if( typeof(r.status) != 'undefined' && r.status == 'error' ) {
+                    alert('Ошибка: ' + r.data.errorText);
+                }
+            });
+        };
+        
+        $(function(){
+            $('#register-button').click(function(){
+                $('#registration-modal').modal('show');
+            });
+
+            $('#login-button').click(function(){
+                $('#authorization-modal').modal('show');
+            });
+        });
+        </script>
+        <?php } ?>
+        
+    </body>
+</html>

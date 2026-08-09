@@ -1,0 +1,25 @@
+{
+    "require": {
+        "php": "^8.2",
+        "illuminate/database": "9.*",
+        "illuminate/events": "9.*",
+        "doctrine/dbal": "^4.2",
+        "nesbot/carbon": "^2.73",
+        "firebase/php-jwt": "^7.0",
+        "smarty/smarty": "^5.8",
+        "phpmailer/phpmailer": "^7.0",
+        "intervention/image": "^3.11",
+        "barryvdh/laravel-dompdf": "^3.1",
+        "maatwebsite/excel": "^3.1",
+        "cboden/ratchet": "^0.4.4",
+        "textalk/websocket": "^1.5",
+        "deepseek-php/deepseek-php-client": "^2.0",
+        "cruide/starline-openapi-php": "^1.0",
+        "guzzlehttp/guzzle": "^7.15"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}

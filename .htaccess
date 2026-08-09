@@ -1,0 +1,31 @@
+AddDefaultCharset UTF-8
+DirectoryIndex index.php
+
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .atom .css .js .json .rss .vtt .webapp .xml
+</IfModule>
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(log|ini|json|phtml|tpl|php|lock|md|dist|rst)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^index\.php$">
+    Require all granted
+</FilesMatch>

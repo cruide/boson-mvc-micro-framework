@@ -1,0 +1,14 @@
+<div class="jumbotron">
+    <h2>WOT server ping</h2>
+</div>
+
+<div class="row">
+    <table class="table table-responsive table-striped">
+    <?php foreach($results as $key=>$val) { ?>
+        <tr>
+            <td>Server <?=$key?></td>        
+            <td><?=$val?>ms</td>
+        </tr>
+    <?php } ?>
+    </table>
+</div>
