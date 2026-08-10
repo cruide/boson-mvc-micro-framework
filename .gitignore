@@ -1,5 +1,4 @@
 /app/vendor
 /app/*.lock
-/app/configs/*.ini
 /content
 /temp
