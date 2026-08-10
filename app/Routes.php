@@ -19,9 +19,6 @@ router()->any('/login', 'Index@login', 'index.login')
 		->any('/logout', 'Index@logout', 'index.logout')
 		->any('/register', 'Index@register', 'index.register');
 
-router()->get('/passwords/update', 'Passwords@update', 'passwords.update');
-router()->get('/passwords', 'Passwords@index', 'passwords');
-
 router()->group(['prefix' => 'users', 'name' => 'users'], function($router) {
     $router->get('/', 'Users@index', 'index');
     $router->get('/{id}', 'Users@show', 'show');
