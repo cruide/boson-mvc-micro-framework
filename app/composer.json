@@ -14,7 +14,6 @@
         "cboden/ratchet": "^0.4.4",
         "textalk/websocket": "^1.5",
         "deepseek-php/deepseek-php-client": "^2.0",
-        "cruide/starline-openapi-php": "^1.0",
         "guzzlehttp/guzzle": "^7.15"
     },
     "config": {
