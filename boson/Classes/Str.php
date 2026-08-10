@@ -77,6 +77,25 @@ class Str
             : strstr($haystack, $needle, $part);
     }
 
+    public static function contains($haystack, $needle): bool
+    {
+        return self::strstr($haystack, $needle) !== false;
+    }
+
+    public static function startsWith($haystack, $needle): bool
+    {
+        return function_exists('mb_strpos')
+            ? mb_strpos($haystack, $needle, 0, 'UTF-8') === 0
+            : str_starts_with($haystack, $needle);
+    }
+
+    public static function endsWith($haystack, $needle): bool
+    {
+        return function_exists('mb_strlen')
+            ? mb_substr($haystack, -mb_strlen($needle, 'UTF-8'), null, 'UTF-8') === $needle
+            : str_ends_with($haystack, $needle);
+    }
+
     /**
      * Обрезает строку до ближайшего пробела, не превышая заданную длину.
      */

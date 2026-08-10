@@ -42,10 +42,7 @@ final class Auth
             $this->authorized = true;
             $this->user       = $userFromSession;
 
-            unset($userFromSession);
-
-            // Успешно авторизовались по сессии, выходим
-            return; 
+            return;
         }
 
         // --- 2. Попытка авторизации по долгосрочному токену (куки) ---
@@ -67,8 +64,6 @@ final class Auth
 
                 $this->authorized = true;
                 $this->user       = $userFromToken;
-
-                unset($userFromToken);
 
                 return;
             }
@@ -94,23 +89,28 @@ final class Auth
             return false;
         }
 
-        // Rate limiting: не более 5 попыток за 15 минут
-        if( !$this->checkRateLimit($email) ) {
+        // Rate limiting: не более 5 попыток за 15 минут (только проверка, без инкремента)
+        if( $this->isRateLimited($email) ) {
             return false;
         }
 
-        // Поиск пользователя по email (пароль пока не проверяем)
+        // Поиск пользователя по email
         $user = User::where('email', '=', $email)->first();
 
-        // Проверка пароля с использованием password_verify (bcrypt)
-        if( !$user || !password_verify($password, $user->password) ) {
-            // Для обратной совместимости со старым хэшированием (MD5+salt)
-            if( !$user || !password_verify_legacy($password, $user->password) ) {
-                return false;
-            }
+        if( !$user ) {
+            $this->incrementRateLimit($email);
+            return false;
+        }
 
-            // Перехешируем пароль на bcrypt
+        // Проверка пароля
+        if( password_verify($password, $user->password) ) {
+            // bcrypt — ок
+        } elseif( password_verify_legacy($password, $user->password) ) {
+            // Перехешируем старый пароль на bcrypt
             $user->password = password_crypt($password);
+        } else {
+            $this->incrementRateLimit($email);
+            return false;
         }
 
         // Регенерируем ID сессии для предотвращения session fixation
@@ -123,7 +123,6 @@ final class Auth
 
         // Обработка "Запомнить меня"
         if( $remember ) {
-            // Если токена еще нет, генерируем новый UUID
             if( empty($user->token) ) {
                 $user->token = uuid();
             }
@@ -131,7 +130,6 @@ final class Auth
             cookies()->token = $user->token;
 
         } else {
-            // Если флаг "запомнить" не активен, удаляем токен и куки
             $user->token = null;
 
             unset(cookies()->token);
@@ -141,6 +139,9 @@ final class Auth
 
         $this->authorized = true;
         $this->user       = $user;
+
+        // Сбрасываем счётчик попыток после успешного входа
+        $this->resetRateLimit($email);
 
         return true;
     }
@@ -205,41 +206,72 @@ final class Auth
     }
 
     /**
-     * Проверка пароля, захешированного старым способом (MD5+crypt).
-     * Использует глобальную функцию password_verify_legacy.
-     *
-     * @param string $password      Пароль в чистом виде.
-     * @param string $storedHash    Хэш из базы данных.
-     * @return bool                 Результат проверки.
-     */
-    private function legacyPasswordVerify(string $password, string $storedHash): bool
-    {
-        return password_verify_legacy($password, $storedHash);
-    }
-
-    /**
-     * Rate limiting для попыток входа.
+     * Проверяет, не превышен ли лимит попыток входа.
      * Не более 5 попыток за 15 минут с одного IP/email.
      *
      * @param string $email
-     * @return bool true если лимит не превышен
+     * @return bool true если лимит превышен
      */
-    private function checkRateLimit(string $email): bool
+    private function isRateLimited(string $email): bool
     {
-        $ip    = get_ip_address();
-        $key   = 'ratelimit_login_' . md5($ip . $email);
-
-        if( function_exists('cache') && function_exists('cacheRemember') ) {
-            $attempts = (int)cache($key);
-
-            if( $attempts >= 5 ) {
-                return false;
-            }
-
-            // Увеличиваем счётчик, TTL 15 минут
-            cache($key, $attempts + 1, 900);
+        if( !$this->cacheAvailable() ) {
+            return false;
         }
 
-        return true;
+        $attempts = (int)cache($this->rateLimitKey($email));
+
+        return $attempts >= 5;
+    }
+
+    /**
+     * Инкрементирует счётчик неудачных попыток входа.
+     *
+     * @param string $email
+     */
+    private function incrementRateLimit(string $email): void
+    {
+        if( !$this->cacheAvailable() ) {
+            return;
+        }
+
+        $key      = $this->rateLimitKey($email);
+        $attempts = (int)cache($key);
+
+        cache($key, $attempts + 1, 900);
+    }
+
+    /**
+     * Сбрасывает счётчик попыток после успешного входа.
+     *
+     * @param string $email
+     */
+    private function resetRateLimit(string $email): void
+    {
+        if( !$this->cacheAvailable() ) {
+            return;
+        }
+
+        cache($this->rateLimitKey($email), null);
+    }
+
+    /**
+     * Ключ кеша для rate limiting.
+     *
+     * @param string $email
+     * @return string
+     */
+    private function rateLimitKey(string $email): string
+    {
+        return 'ratelimit_login_' . md5(get_ip_address() . $email);
+    }
+
+    /**
+     * Проверяет доступность кеша.
+     *
+     * @return bool
+     */
+    private function cacheAvailable(): bool
+    {
+        return function_exists('cache') && function_exists('cacheRemember');
     }
 }
