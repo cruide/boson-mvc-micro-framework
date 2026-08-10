@@ -120,13 +120,19 @@ final class Input extends Registry
      * ---------------------------------------------------------------------- */
 
     /**
-     * Возвращает все входные данные в виде массива.
+     * Возвращает все входные данные с XSS-очисткой.
      *
      * @return array<string, mixed>
      */
     public function all(): array
     {
-        return $this->toArray();
+        $result = [];
+
+        foreach($this->properties as $key => $value) {
+            $result[ $key ] = $this->_xss_clean($value);
+        }
+
+        return $result;
     }
 
     /**

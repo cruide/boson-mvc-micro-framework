@@ -5,9 +5,7 @@ DirectoryIndex index.php
     AddCharset UTF-8 .atom .css .js .json .rss .vtt .webapp .xml
 </IfModule>
 
-<IfModule mod_autoindex.c>
-    Options -Indexes
-</IfModule>
+Options -Indexes
 
 <IfModule mod_rewrite.c>
     RewriteEngine On

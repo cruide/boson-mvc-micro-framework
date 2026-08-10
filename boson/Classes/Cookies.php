@@ -71,7 +71,7 @@ class Cookies
             'expires'  => $expires,
             'path'     => '/',
             'httponly' => true,
-            'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'secure'   => $this->isSecure(),
             'samesite' => 'Strict',
         ]);
 
@@ -89,7 +89,7 @@ class Cookies
             'expires'  => time() - 3600,
             'path'     => '/',
             'httponly' => true,
-            'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'secure'   => $this->isSecure(),
             'samesite' => 'Strict',
         ]);
 
@@ -112,6 +112,22 @@ class Cookies
     public function all(): array
     {
         return $this->_properties;
+    }
+
+    /**
+     * Проверяет HTTPS (в том числе за reverse-proxy через X-Forwarded-Proto).
+     */
+    protected function isSecure(): bool
+    {
+        if( !empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off' ) {
+            return true;
+        }
+
+        if( ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? null) === 'https' ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
