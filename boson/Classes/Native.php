@@ -11,7 +11,7 @@ class Native
 {
     public static $correctXHTML = false;
     private static $globals;
-    protected $_file, $properties, $template_dir;
+    protected $properties, $template_dir;
 
     const XHTML_CRRECTION_ON  = true;
     const XHTML_CRRECTION_OFF = false;
@@ -129,7 +129,8 @@ class Native
 
     public function flushProperties()
     {
-        $this->_properties = [];
+        $this->properties = [];
+        return $this;
     }
 
     protected function _exec( $_native_execute_prepared_file )
@@ -141,11 +142,11 @@ class Native
         }
 
         if( is_array(self::$globals) ) {
-            extract( self::$globals );
+            extract( self::$globals, EXTR_SKIP );
         }
 
         if( is_array($this->properties) ) {
-            extract( $this->properties );
+            extract( $this->properties, EXTR_SKIP );
         }
 
         ob_start();

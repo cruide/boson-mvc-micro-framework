@@ -375,12 +375,12 @@
   /**
    * Получение конфигурации из .ini файлов в виде BosonObject
    *
-   * @param string $name    Имя файла (без расширения .ini)
+   * @param string $name     Имя файла (без расширения .ini)
    * @param string|null $keyname Ключ внутри конфигурации
+   * @param mixed  $default  Значение по умолчанию (если ключ/файл не найден)
    * @return \Boson\BosonObject|mixed|null
-   * @throws \Exception
    */
-  function cfg(string $name, ?string $keyname = null)
+  function cfg(string $name, ?string $keyname = null, $default = null)
   {
       static $settings;
 
@@ -388,12 +388,7 @@
           $settings = new \Boson\BosonObject();
       }
 
-      /**
-       * Рекурсивно преобразует массив в BosonObject
-       * @param array $data
-       * @return \Boson\BosonObject
-       */
-      $makeObject = function(array $data) use (&$makeObject) {
+      $makeObject = static function(array $data) use (&$makeObject): \Boson\BosonObject {
           $obj = new \Boson\BosonObject();
           
           foreach($data as $key => $val) {
@@ -401,16 +396,14 @@
               
               if( is_array($val) ) {
                   $obj->set($keySanitized, $makeObject($val));
-                  
               } else {
-                $obj->set($keySanitized, $val);
+                  $obj->set($keySanitized, $val);
               }
           }
           
           return $obj;
       };
 
-      // Sanitize filename to prevent directory traversal
       $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '', $name);
 
       if( !$settings->has($safeName) ) {
@@ -420,20 +413,17 @@
               $parsed = @parse_ini_file($filePath, true);
             
               if( $parsed === false ) {
-                  throw new \Exception("Ошибка чтения файла конфигурации `{$filePath}`");
+                  return $default;
               }
               
-              $iniObject = $makeObject($parsed);
-              
-              $settings->set($safeName, $iniObject);
-              
+              $settings->set($safeName, $makeObject($parsed));
           } else {
-              throw new \Exception("Указан несуществующий файл конфигурации `{$safeName}`");
+              return $default;
           }
       }
 
       if( !$settings->has($safeName) ) {
-          throw new \Exception("Некорректное имя файла конфигурации `{$safeName}`");
+          return $default;
       }
 
       $config = $settings->get($safeName);
@@ -442,7 +432,7 @@
           return $config;
       }
 
-      return $config->has($keyname) ? $config->get($keyname) : null;
+      return $config->has($keyname) ? $config->get($keyname) : $default;
   }
 // -----------------------------------------------------------------------------
   /**
@@ -586,7 +576,7 @@
   function get_x_response_type()
   {
 
-	  return $_SERVER['HTTP_X_RESPONSE_TYPE'];
+	  return $_SERVER['HTTP_X_RESPONSE_TYPE'] ?? '';
   }
 // ------------------------------------------------------------------------------
   function javascript( $str )
@@ -595,73 +585,70 @@
   }
 // -------------------------------------------------------------------------------------
   /**
-  * Redirector
-  *
-  * @param array $data
-  * @param integer $status
-  */
+   * HTTP-редирект.
+   *
+   * Варианты вызова:
+   *   redirect('/users')           → Location: BASE_URL/users
+   *   redirect()                   → Location: BASE_URL
+   *   redirect(['controller' => 'users', 'message' => 'Сохранено'])
+   *   router()->redirect('users.show', ['id' => 5])  → именованный маршрут
+   *
+   * @param string|array|null $data   URL, массив или null (на главную)
+   * @param int  $redirect_status     HTTP-статус (по умолчанию 301)
+   */
   function redirect($data = null, $redirect_status = 301)
   {
-	  if( !is_array($data) ) {
-		  if( is_string($data) ) {
-			  header( 'Location: ' . make_url($data), true, $redirect_status);
-			  exit();
+      $url  = BASE_URL;
 
-		  } else if( empty($data) ) {
-			  header('Location: ' . BASE_URL, true, $redirect_status);
-			  exit();
-		  }
+      if( is_string($data) && $data !== '' ) {
+          $url = make_url($data);
+          
+      } elseif( is_array($data) ) {
 
-		  abort('Incorrect redirect path');
-	  }
+          // Flash-сообщения
+          foreach(['message', 'error'] as $k) {
+              if( !empty($data[$k]) ) {
+                  session()->flash($k, $data[$k]);
+                  unset($data[$k]);
+              }
+          }
 
-	  $session = session();
+          // Строим URL: /controller/method/param1/param2...
+          if( !empty($data['controller']) ) {
+              $url .= '/' . $data['controller'];
+              unset($data['controller']);
 
-	  if( !empty($data['message']) ) { 
-		  $session->redirect_message = $data['message']; 
-	  }
-	  
-	  if( !empty($data['error']) ) { 
-		  $session->redirect_error = $data['error']; 
-	  }
-	  
-	  unset($data['message'], $data['error']);
+              if( !empty($data['method']) ) {
+                  $url .= '/' . $data['method'];
+                  unset($data['method']);
+              }
+          }
 
-	  $_ = BASE_URL;
-	  
-	  if( !empty($data['controller']) ) {
-		  $_ .= '/' . $data['controller'];
-		  
-		  if( isset($data['method']) ) {
-			  $_ .= '/' . $data['method'];
-		  }
-	  }
+          foreach($data as $val) {
+              if( is_scalar($val) ) {
+                  $url .= '/' . urlencode($val);
+              }
+          }
 
-	  unset($data['controller'], $data['method']);
+      } elseif( !empty($data) ) {
+          abort('Incorrect redirect path');
+      }
 
-	  if( array_count($data) > 0 ) {
-		  foreach($data as $key=>$val) {
-			  if( is_varible_name($key) && is_scalar($val) ) {
-//                  $_ .= "/{$key}/{$val}";
-				  $_ .= "/{$val}";
-			  }
-		  }
-	  }
+      // Для JSON/AJAX — JavaScript-редирект вместо Location
+      if( input()->expectsJson() && !headers_sent() ) {
+          http_cache_off();
 
-	  if( input()->expectsJson() && !headers_sent() ) {
-		  http_cache_off();
+          $type = $_SERVER['HTTP_X_RESPONSE_TYPE'] ?? '';
 
-		  if( get_x_response_type() == 'html' ) {
-			  exit(
-				  javascript('window.location.href = "' . $_ . '";')
-			  );
-		  } else if( get_x_response_type() == 'script' ) {
-			  exit('window.location.href = "' . $_ . '";');
-		  }
-	  }
+          if( $type === 'html' ) {
+              exit("<script type=\"text/javascript\">\nwindow.location.href = \"{$url}\";\n</script>");
+          } elseif( $type === 'script' ) {
+              exit('window.location.href = "' . $url . '";');
+          }
+      }
 
-	  header( 'Location: ' . $_, true, $redirect_status);
-	  exit();
+      header('Location: ' . $url, true, $redirect_status);
+      exit();
   }
 // -----------------------------------------------------------------------------
   /**
@@ -920,7 +907,7 @@
 		  }
 	  }
 
-	  pathinfo($filepath, PATHINFO_EXTENSION);
+	  return pathinfo($filepath, PATHINFO_EXTENSION);
   }
 // -----------------------------------------------------------------------------
   function rating_stars( $rating )

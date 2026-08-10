@@ -352,15 +352,15 @@ final class Theme
             $this->setGlobals();
         }
 
-        // Flash-сообщения
-        if( session()->has('redirect_message') ) {
-            $this->engine->assign('redirect_message', session()->redirect_message);
-            session()->redirect_message = null;
-        }
-
-        if( session()->has('redirect_error') ) {
-            $this->engine->assign('redirect_error', session()->redirect_error);
-            session()->redirect_error = null;
+        // Flash-сообщения (новый API session()->flash() + старый для совместимости)
+        foreach(['message', 'error'] as $key) {
+            $flash = session()->flash($key);
+            if( $flash !== null ) {
+                $this->engine->assign('redirect_' . $key, $flash);
+            } elseif( session()->has('redirect_' . $key) ) {
+                $this->engine->assign('redirect_' . $key, session()->get('redirect_' . $key));
+                session()->remove('redirect_' . $key);
+            }
         }
 
         // Статус авторизации (для Smarty-шаблонов, где нет прямого доступа к is_auth())
