@@ -73,17 +73,17 @@
       return \Boson\Eloquent::getInstance();
   }
   
-  function db($connection = 'default'): \Illuminate\Database\MySqlConnection
+  function db($connection = null): \Illuminate\Database\Connection
   {
       return orm()->db($connection);
   }
   
-  function table($table, $connection = 'default'): \Illuminate\Database\Query\Builder
+  function table($table, $connection = null): \Illuminate\Database\Query\Builder
   {
       return db($connection)->table($table);
   }
   
-  function schema($connection = 'default'): \Illuminate\Database\Schema\MySqlBuilder
+  function schema($connection = null): \Illuminate\Database\Schema\Builder
   {
       return orm()->schema($connection);  
   }

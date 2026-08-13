@@ -16,29 +16,19 @@ class Eloquent
     protected $cfg;
     protected $tables;
     protected $fields;
+    protected $connections = [];
     
     public function __construct()
     {
         $this->cfg = cfg('database');
         $this->orm = new \Illuminate\Database\Capsule\Manager();
         
-        if( !empty($this->cfg->default) ) {
-            foreach($this->cfg as $db_name=>$db_cfg) {
-                $this->orm->addConnection([
-                    'driver'    => !empty($db_cfg['driver']) ? $db_cfg['driver'] : 'mysql',
-                    'host'      => $db_cfg['host'],
-                    'port'      => !empty($db_cfg['port']) ? $db_cfg['port'] : 3306,
-                    'database'  => $db_cfg['database'],
-                    'username'  => $db_cfg['username'],
-                    'password'  => $db_cfg['password'],
-                    'charset'   => !empty($db_cfg['charset']) ? $db_cfg['charset'] : 'utf8',
-                    'collation' => !empty($db_cfg['collation']) ? $db_cfg['collation'] : 'utf8_general_ci',
-                    'prefix'    => $db_cfg['prefix'],
-                ], $db_name);
-            }
-            
-            unset($db_name, $db_cfg);
-            
+        foreach($this->parseConnections() as $db_name => $db_cfg) {
+            $this->orm->addConnection($db_cfg, $db_name);
+            $this->connections[] = $db_name;
+        }
+        
+        if( !empty($this->connections) ) {
             $this->orm->setEventDispatcher(
                 new \Illuminate\Events\Dispatcher(
                     new \Illuminate\Container\Container()
@@ -49,50 +39,136 @@ class Eloquent
             $this->orm->bootEloquent();
         }
         
-        class_alias('\\Illuminate\\Database\\Capsule\\Manager', '\\DB');
+        if( !class_exists('\\DB', false) ) {
+            class_alias('\\Illuminate\\Database\\Capsule\\Manager', '\\DB');
+        }
     }
     
-    public function db($connection = 'default'): \Illuminate\Database\MySqlConnection
+    /**
+     * Разбирает конфигурацию БД (database.ini) в массив соединений.
+     *
+     * Каждая секция ini-файла — отдельное соединение. Секция `[default]`
+     * используется как соединение по умолчанию.
+     *
+     * @return array Массив вида [имя_соединения => конфиг соединения]
+     */
+    protected function parseConnections(): array
     {
-        return \Illuminate\Database\Capsule\Manager::connection($connection);    
+        if( $this->cfg === null ) {
+            return [];
+        }
+        
+        if( is_object($this->cfg) && method_exists($this->cfg, 'toArray') ) {
+            $config = $this->cfg->toArray();
+        } elseif( is_array($this->cfg) ) {
+            $config = $this->cfg;
+        } else {
+            return [];
+        }
+        
+        $connections = [];
+        
+        foreach($config as $db_name => $db_cfg) {
+            if( !is_array($db_cfg) || empty($db_cfg['database']) ) {
+                continue;
+            }
+            
+            $connections[$db_name] = [
+                'driver'    => !empty($db_cfg['driver']) ? $db_cfg['driver'] : 'mysql',
+                'host'      => !empty($db_cfg['host']) ? $db_cfg['host'] : 'localhost',
+                'port'      => !empty($db_cfg['port']) ? $db_cfg['port'] : 3306,
+                'database'  => $db_cfg['database'],
+                'username'  => !empty($db_cfg['username']) ? $db_cfg['username'] : '',
+                'password'  => !empty($db_cfg['password']) ? $db_cfg['password'] : '',
+                'charset'   => !empty($db_cfg['charset']) ? $db_cfg['charset'] : 'utf8',
+                'collation' => !empty($db_cfg['collation']) ? $db_cfg['collation'] : 'utf8_general_ci',
+                'prefix'    => !empty($db_cfg['prefix']) ? $db_cfg['prefix'] : '',
+            ];
+        }
+        
+        return $connections;
     }
     
-    public function table($table, $connection = 'default'): \Illuminate\Database\Query\Builder
+    /**
+     * Определяет имя соединения для запроса.
+     *
+     * Если соединение не передано явно, возвращает `default` (при его наличии)
+     * либо первое зарегистрированное соединение.
+     *
+     * @param string|null $connection Имя соединения или null
+     * @return string
+     */
+    protected function resolveConnection($connection = null): string
     {
-        return $this->db($connection)->table($table);    
+        if( !empty($connection) ) {
+            return $connection;
+        }
+        
+        if( in_array('default', $this->connections, true) ) {
+            return 'default';
+        }
+        
+        if( !empty($this->connections) ) {
+            return $this->connections[0];
+        }
+        
+        return 'default';
     }
     
-    public function hasTable($tablename, $connection = 'default', $refresh = false): bool
+    /**
+     * Экранирует имя таблицы/БД обратными кавычками.
+     */
+    protected function quoteIdentifier(string $identifier): string
     {
-        $prefix   = $this->db($connection)->getTablePrefix();
-        $database = $this->db($connection)->getDatabaseName();
+        return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+    
+    public function db($connection = null): \Illuminate\Database\Connection
+    {
+        return \Illuminate\Database\Capsule\Manager::connection( $this->resolveConnection($connection) );
+    }
+    
+    public function table($table, $connection = null): \Illuminate\Database\Query\Builder
+    {
+        return $this->db($connection)->table($table);
+    }
+    
+    public function hasTable($tablename, $connection = null, $refresh = false): bool
+    {
+        $connection = $this->resolveConnection($connection);
+        $db         = $this->db($connection);
+        $prefix     = $db->getTablePrefix();
+        $database   = $db->getDatabaseName();
         
         if( !is_array($this->tables) ) {
             $this->tables = [];
         }
         
-        if( empty($this->tables[$connection]) ) {
+        if( $refresh || !array_key_exists($connection, $this->tables) ) {
             $this->tables[ $connection ] = [];
-        }
-        
-        if( empty($this->tables[$connection]) || $refresh ) {
+            
             $field_name = "Tables_in_{$database}";
-            $data       = $this->db($connection)->select( \DB::raw("SHOW TABLES FROM {$database}") );
+            $data       = $db->select( "SHOW TABLES FROM " . $this->quoteIdentifier($database) );
             
             foreach($data as $item) {
-                $this->tables[ $connection ][] = str_replace($prefix, '', $item->$field_name);
+                $name = $item->$field_name;
+                
+                if( $prefix !== '' && str_starts_with($name, $prefix) ) {
+                    $name = substr($name, strlen($prefix));
+                }
+                
+                $this->tables[ $connection ][] = $name;
             }
         }
         
-        if( !empty($this->tables[$connection]) && in_array($tablename, $this->tables[$connection]) ) {
-            return true;
-        }
-        
-        return false;
+        return in_array($tablename, $this->tables[ $connection ], true);
     }
     
-    public function getTableFieldsList($tablename, $connection = 'default'): array
+    public function getTableFieldsList($tablename, $connection = null): array
     {
+        $connection = $this->resolveConnection($connection);
+        $db         = $this->db($connection);
+        
         if( !is_array($this->fields) ) {
             $this->fields = [];
         }
@@ -101,24 +177,24 @@ class Eloquent
             $this->fields[ $connection ] = [];
         }
         
-        if( !empty($this->fields[$connection][$tablename]) ) {
+        if( array_key_exists($tablename, $this->fields[ $connection ]) ) {
             return $this->fields[ $connection ][ $tablename ];
         }
         
-        $prefix = $this->db($connection)->getTablePrefix();
-            
+        $prefix = $db->getTablePrefix();
+        
         $_     = [];
-        $items = $this->db($connection)->select( \DB::raw("SHOW FIELDS FROM {$prefix}{$tablename}") );
-            
+        $items = $db->select( "SHOW FIELDS FROM " . $this->quoteIdentifier($prefix . $tablename) );
+        
         foreach($items as $item) {
             $_[] = $item->Field;
         }
-            
+        
         return $this->fields[ $connection ][ $tablename ] = $_;
     }
     
-    public function schema($connection = 'default'): \Illuminate\Database\Schema\MySqlBuilder
+    public function schema($connection = null): \Illuminate\Database\Schema\Builder
     {
-        return $this->orm->connection($connection)->getSchemaBuilder();
+        return $this->db($connection)->getSchemaBuilder();
     }
 }

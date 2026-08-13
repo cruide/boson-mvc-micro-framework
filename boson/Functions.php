@@ -1327,6 +1327,14 @@
 				 ? \Carbon\Carbon::parse( $datetime )->format($format)
 					 : \Carbon\Carbon::parse( $datetime );
   }
+  
+  if( !function_exists('now') ) {
+      function now()
+      {
+          return (new \Carbon\Carbon())->now();
+      }
+  }
+  
 // ------------------------------------------------------------------------------
   /**
   * Alias for \Boson\Str::ucfirst method
