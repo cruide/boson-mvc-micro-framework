@@ -1,18 +1,18 @@
 <?php namespace Boson;
 /**
- * MicroRouter — лёгкий маршрутизатор для Boson PHP micro framework.
+ * MicroRouter — lightweight router for Boson PHP micro framework.
  *
- * Возможности:
- *  - Регистрация маршрутов по HTTP-методам (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, ANY).
- *  - Группы маршрутов с общими префиксами и middleware.
- *  - Ресурсные контроллеры (resource).
- *  - Именованные маршруты и обратная генерация URL.
- *  - Middleware до и после вызова контроллера.
- *  - Параметры маршрута с пользовательскими паттернами (pattern()).
- *  - Необязательные параметры {id?}.
- *  - Удобные хелперы whereNumber(), whereAlpha(), whereAlphaNumeric().
- *  - Fallback-маршрут для 404.
- *  - Метод dispatch() — запуск найденного маршрута с middleware и хуками.
+ * Features:
+ *  - Route registration by HTTP methods (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD, ANY).
+ *  - Route groups with common prefixes and middleware.
+ *  - Resource controllers (resource).
+ *  - Named routes and reverse URL generation.
+ *  - Middleware before and after calling the controller.
+ *  - Route parameters with custom patterns (pattern()).
+ *  - Optional parameters {id?}.
+ *  - Convenient helpers whereNumber(), whereAlpha(), whereAlphaNumeric().
+ *  - Fallback route for 404.
+ *  - dispatch() method — runs the found route with middleware and hooks.
  *
  * @author  Tishchenko Alexander <info@alex-tisch.ru>
  * @link    http://alex-tisch.ru
@@ -24,7 +24,7 @@ use Closure;
 use Throwable;
 
 /**
- * Исключение маршрутизатора.
+ * Router exception.
  */
 class MicroRouterException extends \Exception {}
 
@@ -32,47 +32,47 @@ class MicroRouter
 {
     use SingletonTrait;
 
-    /** Текущий нормализованный запрос (без query и расширений). */
+    /** Current normalized request (without query and extensions). */
     protected ?string $_request = null;
 
-    /** Все зарегистрированные маршруты. */
+    /** All registered routes. */
     protected array $_routes = [];
 
-    /** Маршруты, сгруппированные по HTTP-методу. */
+    /** Routes grouped by HTTP method. */
     protected array $_routes_by_type = [];
 
-    /** Индекс маршрутов по имени для O(1) поиска. */
+    /** Route index by name for O(1) lookup. */
     protected array $_routes_by_name = [];
 
-    /** Текущий разрешённый маршрут. */
+    /** Current resolved route. */
     protected ?array $_current_route = null;
 
-    /** Пользовательские паттерны параметров. */
+    /** Custom parameter patterns. */
     protected array $_patterns = [];
 
-    /** Допустимые типы запросов. */
+    /** Allowed request types. */
     protected array $_request_types = [
         'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD', 'ANY',
     ];
 
-    /** Расширения, которые нужно срезать в URI. */
+    /** Extensions to strip from the URI. */
     protected array $superfluous = [
         '\.html', '\.htm', '\.php5', '\.php', '\.php3', '\.shtml',
         '\.phtml', '\.dhtml', '\.xhtml', '\.inc', '\.cgi', '\.pl',
         '\.xml', '\.js',
     ];
 
-    /** Стек групп: [['prefix' => '', 'middleware' => [], 'name' => ''], ...] */
+    /** Group stack: [['prefix' => '', 'middleware' => [], 'name' => ''], ...] */
     protected array $_group_stack = [];
 
-    /** Глобальные middleware. */
+    /** Global middleware. */
     protected array $_global_middleware = [];
 
-    /** Fallback-маршрут для 404. */
+    /** Fallback route for 404. */
     protected $_fallback_route = null;
 
     /**
-     * Конструктор. Парсит $_SERVER['REQUEST_URI'] и нормализует путь.
+     * Constructor. Parses $_SERVER['REQUEST_URI'] and normalizes the path.
      */
     public function __construct()
     {
@@ -90,11 +90,11 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Базовая работа с маршрутами
+    //  Basic route handling
     // ---------------------------------------------------------------------
 
     /**
-     * Возвращает текущий URI запроса (после нормализации).
+     * Returns the current request URI (after normalization).
      */
     public function getRequestUri(): string
     {
@@ -102,7 +102,7 @@ class MicroRouter
     }
 
     /**
-     * Возвращает найденный маршрут или null, если не найден.
+     * Returns the found route or null if not found.
      */
     public function getRoute()
     {
@@ -113,7 +113,7 @@ class MicroRouter
         $type   = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $routes = $this->_routes_by_type[$type] ?? [];
 
-        // HEAD fallback -> GET (стандарт HTTP).
+        // HEAD fallback -> GET (HTTP standard).
         if( $type === 'HEAD' ) {
             $routes = array_merge($routes, $this->_routes_by_type['GET'] ?? []);
         }
@@ -124,7 +124,7 @@ class MicroRouter
 
         foreach($routes as $route) {
             if( preg_match("#{$route['regexp']}#", $this->_request, $matches) ) {
-                array_shift($matches); // убираем полное совпадение
+                array_shift($matches); // remove the full match
                 
                 $route['params']      = array_values($matches);
                 $this->_current_route = $route;
@@ -136,44 +136,44 @@ class MicroRouter
         return null;
     }
 
-    /** Возвращает все зарегистрированные маршруты. */
+    /** Returns all registered routes. */
     public function getAllRoutes(): array
     {
         return $this->_routes;
     }
 
-    /** Алиас для getAllRoutes(). */
+    /** Alias for getAllRoutes(). */
     public function routes(): array
     {
         return $this->_routes;
     }
 
-    /** Проверяет, существует ли маршрут с указанным именем. */
+    /** Checks whether a route with the specified name exists. */
     public function isRouteNameExists(string $name): bool
     {
         return isset($this->_routes_by_name[$name]);
     }
 
-    /** Возвращает имя контроллера текущего маршрута. */
+    /** Returns the controller name of the current route. */
     public function getControllerName()
     {
         return $this->getRoute()['controller'] ?? null;
     }
 
-    /** Возвращает имя метода текущего маршрута. */
+    /** Returns the method name of the current route. */
     public function getMethodName()
     {
         return $this->getRoute()['method'] ?? null;
     }
 
-    /** Возвращает параметры текущего маршрута. */
+    /** Returns the parameters of the current route. */
     public function getParams(): array
     {
         return $this->getRoute()['params'] ?? [];
     }
 
     // ---------------------------------------------------------------------
-    //  Регистрация маршрутов по HTTP-методам
+    //  Route registration by HTTP methods
     // ---------------------------------------------------------------------
 
     public function get($path, $data = null, $name = null): self     { return $this->set('GET',     $path, $data, $name); }
@@ -186,7 +186,7 @@ class MicroRouter
     public function any($path, $data = null, $name = null): self     { return $this->set('ANY',     $path, $data, $name); }
 
     /**
-     * Регистрирует один маршрут на массив методов.
+     * Registers a single route for an array of methods.
      *
      * @param array<int, string> $methods
      */
@@ -200,11 +200,11 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Группы маршрутов
+    //  Route groups
     // ---------------------------------------------------------------------
 
     /**
-     * Создаёт группу маршрутов с общими префиксом/middleware/именным префиксом.
+     * Creates a route group with a common prefix/middleware/name prefix.
      *
      * @param array{prefix?:string, middleware?:array|string, name?:string} $attributes
      */
@@ -224,7 +224,7 @@ class MicroRouter
     }
 
     /**
-     * Добавляет глобальный middleware, применяемый ко всем маршрутам.
+     * Adds global middleware applied to all routes.
      */
     public function middleware($middleware): self
     {
@@ -236,11 +236,11 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Ресурсные маршруты
+    //  Resource routes
     // ---------------------------------------------------------------------
 
     /**
-     * Регистрирует RESTful-маршруты для контроллера-ресурса.
+     * Registers RESTful routes for a resource controller.
      */
     public function resource(string $path, string $controller): self
     {
@@ -281,16 +281,16 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Основной метод регистрации
+    //  Main registration method
     // ---------------------------------------------------------------------
 
     /**
-     * Регистрирует маршрут. Поддерживает массив маршрутов (обратная совместимость).
+     * Registers a route. Supports an array of routes (backward compatibility).
      *
-     * @param string $type       HTTP-метод
-     * @param string|array $path Путь или массив [[path, data, name?], ...]
-     * @param array|string|null $data 'Controller@method' или ['controller'=>..,'method'=>..,'name'=>..,'middleware'=>[]]
-     * @param string|null $route_name Имя маршрута (опционально)
+     * @param string $type       HTTP method
+     * @param string|array $path Path or array [[path, data, name?], ...]
+     * @param array|string|null $data 'Controller@method' or ['controller'=>..,'method'=>..,'name'=>..,'middleware'=>[]]
+     * @param string|null $route_name Route name (optional)
      *
      * @throws MicroRouterException
      */
@@ -302,7 +302,7 @@ class MicroRouter
             throw new MicroRouterException("Invalid request type specified: {$type}");
         }
 
-        // Массив маршрутов (обратная совместимость)
+        // Array of routes (backward compatibility)
         if( is_array($path) ) {
             foreach($path as $item) {
                 if( empty($item[0]) || empty($item[1]) ) {
@@ -323,7 +323,7 @@ class MicroRouter
             );
         }
 
-        // Преобразование "Controller@method" в массив
+        // Convert "Controller@method" to an array
         if( is_scalar($data) ) {
             if( !str_contains((string)$data, '@') ) {
                 throw new MicroRouterException(
@@ -348,7 +348,7 @@ class MicroRouter
             );
         }
 
-        // Применяем атрибуты группы
+        // Apply group attributes
         [$path, $data] = $this->applyGroupAttributes($path, $data);
 
         $path         = trim($path, '/');
@@ -359,7 +359,7 @@ class MicroRouter
             $data['name'] = snake_case($data['controller']) . '.' . snake_case($data['method']);
         }
 
-        // Проверка существования контроллера и метода
+        // Check controller and method existence
         $className = $this->requireController($data['controller']);
         
         if( !method_exists($className, $data['method']) ) {
@@ -382,7 +382,7 @@ class MicroRouter
     }
 
     /**
-     * Применяет атрибуты из активных групп.
+     * Applies attributes from active groups.
      *
      * @return array{0:string, 1:array}
      */
@@ -424,11 +424,11 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Загрузка контроллеров
+    //  Controller loading
     // ---------------------------------------------------------------------
 
     /**
-     * Подключает файл контроллера и возвращает полное имя класса.
+     * Includes the controller file and returns the fully qualified class name.
      *
      * @throws MicroRouterException
      */
@@ -456,31 +456,31 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Регулярные выражения и параметры
+    //  Regular expressions and parameters
     // ---------------------------------------------------------------------
 
     /**
-     * Строит регулярное выражение из шаблона пути.
+     * Builds a regular expression from a path template.
      */
     protected function buildRegexp(string $path): string
     {
-        // Пользовательские паттерны
+        // Custom patterns
         foreach($this->_patterns as $key=>$pattern) {
             $path = preg_replace("/\{{$key}\}/", "({$pattern})", $path);
             $path = preg_replace("/\{{$key}\?\}/", "\/?({$pattern})?", $path);
         }
 
-        // Необязательные параметры {name?}
+        // Optional parameters {name?}
         $regexp = preg_replace('#/?\{[0-9a-zA-Z_]+\?\}#', '(?:/([0-9a-zA-Z\-\_]+))?', $path);
 
-        // Обязательные параметры {name}
+        // Required parameters {name}
         $regexp = preg_replace('#\{[0-9a-zA-Z_]+\}#', '([0-9a-zA-Z\-\_]+)', $regexp);
 
         return "^/{$regexp}$";
     }
 
     /**
-     * Задаёт пользовательский regex-паттерн для параметра.
+     * Sets a custom regex pattern for a parameter.
      *
      * @example $router->pattern('id', '\d+');
      */
@@ -492,7 +492,7 @@ class MicroRouter
     }
 
     /**
-     * Параметр принимает только цифры. Сокращение для pattern($name, '[0-9]+').
+     * The parameter accepts only digits. Shorthand for pattern($name, '[0-9]+').
      */
     public function whereNumber(string $name): self
     {
@@ -500,7 +500,7 @@ class MicroRouter
     }
 
     /**
-     * Параметр принимает только буквы. Сокращение для pattern($name, '[a-zA-Z]+').
+     * The parameter accepts only letters. Shorthand for pattern($name, '[a-zA-Z]+').
      */
     public function whereAlpha(string $name): self
     {
@@ -508,7 +508,7 @@ class MicroRouter
     }
 
     /**
-     * Параметр принимает буквы и цифры. Сокращение для pattern($name, '[a-zA-Z0-9]+').
+     * The parameter accepts letters and digits. Shorthand for pattern($name, '[a-zA-Z0-9]+').
      */
     public function whereAlphaNumeric(string $name): self
     {
@@ -516,11 +516,11 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Генерация URL и редиректы
+    //  URL generation and redirects
     // ---------------------------------------------------------------------
 
     /**
-     * Редирект на маршрут по имени.
+     * Redirect to a route by name.
      */
     public function redirect(string $name, array $values = []): void
     {
@@ -528,7 +528,7 @@ class MicroRouter
     }
 
     /**
-     * Возвращает путь маршрута по имени, подставляя значения параметров.
+     * Returns the route path by name, substituting parameter values.
      *
      * @throws MicroRouterException
      */
@@ -549,10 +549,10 @@ class MicroRouter
             );
         }
 
-        // Удаляем неиспользованные необязательные параметры
+        // Remove unused optional parameters
         $path = preg_replace('#/?\{[0-9a-zA-Z_]+\?\}#', '', $path);
 
-        // Если остались необязательные параметры — ошибка
+        // If optional parameters remain — error
         if( preg_match('#\{[0-9a-zA-Z_]+\}#', $path) ) {
             throw new MicroRouterException(
                 "Missing required parameters for route `{$name}`"
@@ -563,12 +563,12 @@ class MicroRouter
     }
 
     // ---------------------------------------------------------------------
-    //  Fallback-маршрут
+    //  Fallback route
     // ---------------------------------------------------------------------
 
     /**
-     * Регистрирует fallback-маршрут, вызываемый когда ни один маршрут не совпал.
-     * Принимает строку 'Controller@method' или массив ['controller' => ..., 'method' => ...].
+     * Registers a fallback route, called when no route matched.
+     * Accepts a 'Controller@method' string or an array ['controller' => ..., 'method' => ...].
      */
     public function fallback($data): self
     {
@@ -581,12 +581,12 @@ class MicroRouter
     // ---------------------------------------------------------------------
 
     /**
-     * Находит маршрут и вызывает его контроллер с middleware и хуками _before/_after.
-     * Возвращает результат работы метода контроллера.
+     * Finds the route and calls its controller with middleware and _before/_after hooks.
+     * Returns the result of the controller method.
      *
-     * @param callable|null $handler Пользовательский обработчик. Если null — создаётся
-     *                               стандартный: инстанциирует контроллер, вызывает
-     *                               _before → метод → _after.
+     * @param callable|null $handler Custom handler. If null — a standard one is created:
+     *                               it instantiates the controller, calls
+     *                               _before → method → _after.
      *
      * @throws MicroRouterException
      */
@@ -624,7 +624,7 @@ class MicroRouter
             };
         }
 
-        // Оборачиваем middleware (pipeline)
+        // Wrap middleware (pipeline)
         $middleware = array_reverse($route['middleware'] ?? []);
         
         foreach($middleware as $m) {
@@ -639,7 +639,7 @@ class MicroRouter
     }
 
     /**
-     * Преобразует fallback-данные в структуру маршрута.
+     * Converts fallback data into a route structure.
      */
     protected function resolveFallback(): array
     {

@@ -146,7 +146,7 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * проверка на четность
+  * Check if the number is even
   */
   function is_even($num)
   {
@@ -215,7 +215,7 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Генератор соли
+  * Salt generator
   *
   * @return string $lenght
   */
@@ -225,7 +225,7 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Шифрование пароля (bcrypt)
+  * Password encryption (bcrypt)
   *
   * @param string $password
   */
@@ -239,8 +239,8 @@
   }
 
   /**
-  * Проверка пароля, зашифрованного старым способом (MD5+crypt).
-  * Для обратной совместимости. При успешной проверке пароль следует перехешировать.
+  * Verify a password encrypted with the legacy method (MD5+crypt).
+  * Kept for backward compatibility. On successful verification the password should be rehashed.
   *
   * @param string $password
   * @param string $storedHash
@@ -251,7 +251,7 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Генератор паролей
+  * Password generator
   *
   * @param int $number
   */
@@ -275,7 +275,7 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Метод обратимого шифрования (AES-256-GCM)
+  * Reversible encryption method (AES-256-GCM)
   *
   * @param mixed $string
   * @param mixed $key
@@ -290,8 +290,8 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Дешифровка после метода encrypt
-  * Поддерживает AES-256-GCM (v2) и RC4 (legacy) для обратной совместимости.
+  * Decryption after the encrypt method
+  * Supports AES-256-GCM (v2) and RC4 (legacy) for backward compatibility.
   *
   * @param mixed $cipher
   * @param mixed $key
@@ -314,12 +314,12 @@
 		  }
 	  }
 
-	  // Legacy RC4 (для обратной совместимости)
+	  // Legacy RC4 (for backward compatibility)
 	  return legacy_rc4_crypt($cipher, $key);
   }
 
   /**
-  * Legacy RC4 шифрование/дешифрование (для обратной совместимости)
+  * Legacy RC4 encryption/decryption (for backward compatibility)
   *
   * @param mixed $cipher
   * @param mixed $key
@@ -373,11 +373,11 @@
 // -----------------------------------------------------------------------------
 
   /**
-   * Получение конфигурации из .ini файлов в виде BosonObject
+   * Get configuration from .ini files as a BosonObject
    *
-   * @param string $name     Имя файла (без расширения .ini)
-   * @param string|null $keyname Ключ внутри конфигурации
-   * @param mixed  $default  Значение по умолчанию (если ключ/файл не найден)
+   * @param string $name     File name (without the .ini extension)
+   * @param string|null $keyname Key inside the configuration
+   * @param mixed  $default  Default value (if the key/file is not found)
    * @return \Boson\BosonObject|mixed|null
    */
   function cfg(string $name, ?string $keyname = null, $default = null)
@@ -585,16 +585,16 @@
   }
 // -------------------------------------------------------------------------------------
   /**
-   * HTTP-редирект.
+   * HTTP redirect.
    *
-   * Варианты вызова:
+   * Usage examples:
    *   redirect('/users')           → Location: BASE_URL/users
    *   redirect()                   → Location: BASE_URL
-   *   redirect(['controller' => 'users', 'message' => 'Сохранено'])
-   *   router()->redirect('users.show', ['id' => 5])  → именованный маршрут
+   *   redirect(['controller' => 'users', 'message' => 'Saved'])
+   *   router()->redirect('users.show', ['id' => 5])  → named route
    *
-   * @param string|array|null $data   URL, массив или null (на главную)
-   * @param int  $redirect_status     HTTP-статус (по умолчанию 301)
+   * @param string|array|null $data   URL, array or null (to the home page)
+   * @param int  $redirect_status     HTTP status (301 by default)
    */
   function redirect($data = null, $redirect_status = 301)
   {
@@ -605,7 +605,7 @@
           
       } elseif( is_array($data) ) {
 
-          // Flash-сообщения
+          // Flash messages
           foreach(['message', 'error'] as $k) {
               if( !empty($data[$k]) ) {
                   session()->flash($k, $data[$k]);
@@ -613,7 +613,7 @@
               }
           }
 
-          // Строим URL: /controller/method/param1/param2...
+          // Build the URL: /controller/method/param1/param2...
           if( !empty($data['controller']) ) {
               $url .= '/' . $data['controller'];
               unset($data['controller']);
@@ -634,7 +634,7 @@
           abort('Incorrect redirect path');
       }
 
-      // Для JSON/AJAX — JavaScript-редирект вместо Location
+      // For JSON/AJAX — JavaScript redirect instead of Location
       if( input()->expectsJson() && !headers_sent() ) {
           http_cache_off();
 
@@ -1155,9 +1155,9 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Получение первого элемента масива
-  * Если $key = true, то вернется array с ключем
-  * и значением первого элемента
+  * Get the first element of an array
+  * If $key = true, an array with the key
+  * and value of the first element is returned
   *
   * @param array $_array
   * @param bool $key
@@ -1183,7 +1183,7 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Получение ключа первого элемента масива
+  * Get the key of the first element of an array
   *
   * @param array $_array
   */
@@ -1203,9 +1203,9 @@
 
 // ------------------------------------------------------------------------------
   /**
-  * Получение последнего элемента масива
-  * Если $key = true, то вернется array с ключем
-  * и значением последнего элемента
+  * Get the last element of an array
+  * If $key = true, an array with the key
+  * and value of the last element is returned
   *
   * @param array $_array
   * @param bool $key
@@ -1232,7 +1232,7 @@
 
 // ------------------------------------------------------------------------------
   /**
-  * Получение ключа последнего элемента масива
+  * Get the key of the last element of an array
   *
   * @param array $_array
   */
@@ -1376,7 +1376,7 @@
   * $words = ['литр', 'литра', 'литров']
   * $words = ['минута', 'минуты', 'минут']
   * 
-  * Форма
+  * Forms
   *     ['одна минута', 'две минуты', 'пять минут']
   *     ['один литр', 'два литра', 'пять литров'] 
   * 
@@ -1403,7 +1403,7 @@
   }
 // -----------------------------------------------------------------------------
   /**
-  * Входил ли точка в радиус круга
+  * Check if a point is inside the circle radius
   * 
   * @param mixed $pointX
   * @param mixed $pointY
@@ -1550,7 +1550,7 @@
   }
 
   /**
-  * Вычисление текущего процента $value к $quantity
+  * Calculate the percentage of $value relative to $quantity
   *
   * @param mixed $quantity
   * @param mixed $value

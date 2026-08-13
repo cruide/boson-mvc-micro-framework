@@ -6,16 +6,16 @@
 * @copyright Copyright (c) 2018 All rights reserved
 * @version   2.1
 *
-* Центральный диспетчер запроса. Управляет жизненным циклом:
-* инициализация → маршрутизация → контроллер → рендеринг.
-*
-* Поддерживает:
-* - хуки уровня приложения (beforeRequest, afterResponse)
-* - кастомный CSRF-проверяющий
-* - отключение/включение CSRF через конфиг
-* - обработку необработанных исключений
-* - режим отладки (debug = on в config.ini)
-* - middleware pipeline через router()->dispatch()
+ * Central request dispatcher. Manages the request lifecycle:
+ * initialization → routing → controller → rendering.
+ *
+ * Supports:
+ * - application-level hooks (beforeRequest, afterResponse)
+ * - a custom CSRF checker
+ * - enabling/disabling CSRF via config
+ * - handling of unhandled exceptions
+ * - debug mode (debug = on in config.ini)
+ * - middleware pipeline via router()->dispatch()
 */
 
 use Boson\Traits\SingletonTrait;
@@ -26,13 +26,13 @@ class App
 {
     use SingletonTrait;
 
-    /** @var object Текущий контроллер */
+    /** @var object Current controller */
     protected $controller;
 
-    /** @var array Хуки уровня приложения: ['beforeRequest' => [callable, ...], ...] */
+    /** @var array Application-level hooks: ['beforeRequest' => [callable, ...], ...] */
     protected $_hooks = [];
 
-    /** @var callable|null Кастомный CSRF-проверяющий */
+    /** @var callable|null Custom CSRF checker */
     protected $_csrfChecker = null;
 
     public function __construct()
@@ -59,7 +59,7 @@ class App
     }
 
     /**
-     * Возвращает текущий экземпляр контроллера.
+     * Returns the current controller instance.
      */
     public function getController()
     {
@@ -67,14 +67,14 @@ class App
     }
 
     /**
-     * Регистрирует хук уровня приложения.
+     * Registers an application-level hook.
      *
-     * Доступные события:
-     * - `beforeRequest` — перед вызовом контроллера
-     * - `afterResponse`  — после вызова контроллера, до рендеринга (получает &$content)
+     * Available events:
+     * - `beforeRequest` — before the controller is called
+     * - `afterResponse`  — after the controller is called, before rendering (receives &$content)
      *
-     * @param string $event    Имя события
-     * @param callable $callback Функция-обработчик
+     * @param string $event    Event name
+     * @param callable $callback Handler function
      * @return $this
      */
     public function hook(string $event, callable $callback): self
@@ -84,10 +84,10 @@ class App
     }
 
     /**
-     * Устанавливает кастомный CSRF-проверяющий.
+     * Sets a custom CSRF checker.
      *
-     * Callback должен вернуть true (проверка пройдена) или строку с сообщением об ошибке.
-     * Передайте null чтобы сбросить на стандартную проверку.
+     * The callback must return true (check passed) or a string with an error message.
+     * Pass null to reset to the standard check.
      *
      * @param callable|null $checker
      * @return $this
@@ -99,8 +99,8 @@ class App
     }
     
     /**
-     * Главный метод выполнения запроса.
-     * Оборачивает весь жизненный цикл в try/catch для обработки любых исключений.
+     * Main request execution method.
+     * Wraps the entire lifecycle in try/catch to handle any exceptions.
      */
     public function execute()
     {
@@ -113,8 +113,8 @@ class App
     }
 
     /**
-     * Жизненный цикл запроса:
-     * CORS → хуки beforeRequest → CSRF → _before → контроллер → _after → хуки afterResponse → рендеринг
+     * Request lifecycle:
+     * CORS → beforeRequest hooks → CSRF → _before → controller → _after → afterResponse hooks → rendering
      */
     protected function runRequest()
     {
@@ -127,7 +127,7 @@ class App
 
         $this->checkCsrf();
 
-        // Запускаем контроллер через dispatch() — так работает middleware pipeline
+        // Run the controller via dispatch() — this is how the middleware pipeline works
         $content = router()->dispatch(function() use ($method, $params) {
 
             if( method_exists($this->controller, '_before') ) {
@@ -161,7 +161,7 @@ class App
     }
 
     /**
-     * Выполняет все зарегистрированные хуки для события.
+     * Executes all registered hooks for an event.
      */
     protected function runHooks(string $event, array $args = []): void
     {
@@ -171,24 +171,24 @@ class App
     }
 
     /**
-     * Проверка CSRF-токена для мутирующих методов.
-     * Можно отключить через конфиг: csrf_enabled = off
-     * Можно заменить через csrfChecker().
+     * CSRF token check for mutating methods.
+     * Can be disabled via config: csrf_enabled = off
+     * Can be replaced via csrfChecker().
      */
     protected function checkCsrf(): void
     {
-        // Отключено в конфиге
+        // Disabled in config
         $enabled = cfg('config', 'csrf_enabled');
         if( $enabled === 'off' || $enabled === '0' || $enabled === 'false' ) {
             return;
         }
 
-        // Только для мутирующих методов
+        // Only for mutating methods
         if( !input()->isPost() && !input()->isPut() && !input()->isPatch() && !input()->isDelete() ) {
             return;
         }
 
-        // Кастомный проверяющий
+        // Custom checker
         if( $this->_csrfChecker !== null ) {
             $result = ($this->_csrfChecker)();
             if( $result !== true ) {
@@ -198,14 +198,14 @@ class App
             return;
         }
 
-        // Стандартная проверка
+        // Standard check
         if( !function_exists('csrf_verify') || !csrf_verify() ) {
             $this->abortCsrf('CSRF token mismatch');
         }
     }
 
     /**
-     * Прерывает запрос с ошибкой CSRF.
+     * Aborts the request with a CSRF error.
      */
     protected function abortCsrf(string $message): void
     {
@@ -216,8 +216,8 @@ class App
     }
 
     /**
-     * Обработчик необработанных исключений.
-     * В debug-режиме показывает детали, в production — общее сообщение.
+     * Handler for unhandled exceptions.
+     * In debug mode shows details, in production — a generic message.
      */
     protected function handleException(\Throwable $e): void
     {
@@ -225,7 +225,7 @@ class App
             abort($e->getMessage(), 500);
         }
 
-        // Логируем всё
+        // Log everything
         error_log((string)$e);
 
         $debug = cfg('config', 'debug');
@@ -233,7 +233,7 @@ class App
             $msg = get_class($e) . ': ' . $e->getMessage()
                  . ' in ' . $e->getFile() . ':' . $e->getLine();
         } else {
-            $msg = 'Внутренняя ошибка сервера';
+            $msg = 'Internal server error';
         }
 
         abort($msg, 500);

@@ -37,7 +37,7 @@ class Native
     }
 
     /**
-    * Для совместимости с Smarty
+    * For compatibility with Smarty
     * 
     * @param mixed $name
     * @param mixed $value

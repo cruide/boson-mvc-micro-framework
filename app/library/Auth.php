@@ -4,10 +4,10 @@
  * @author    Tishchenko Alexander (info@alex-tisch.ru)
  * @copyright Copyright (c) 2018 All rights reserved
  *
- * Модифицировано: 2024
- * Описание: Класс аутентификации пользователей. Обеспечивает вход, выход,
- * проверку текущего статуса и автоматическую авторизацию через сессию
- * или долгосрочный токен ("Запомнить меня").
+ * Modified: 2024
+ * Description: User authentication class. Provides login, logout,
+ * checking the current status and automatic authorization via session
+ * or a long-term token ("Remember me").
  */
 
 use Boson\Traits\SingletonTrait;
@@ -17,25 +17,25 @@ final class Auth
 {
     use SingletonTrait;
 
-    /** @var bool Флаг, авторизован ли текущий пользователь */
+    /** @var bool Flag indicating whether the current user is authorized */
     private $authorized = false;
-    /** @var User|null Объект текущего авторизованного пользователя */
+    /** @var User|null The current authorized user object */
     private $user = null;
 
     /**
-     * Приватный конструктор (синглтон).
-     * Пытается автоматически авторизовать пользователя при создании объекта.
-     * Приоритет: 1. Активная сессия -> 2. Долгосрочный токен в куки.
+     * Private constructor (singleton).
+     * Tries to automatically authorize the user when the object is created.
+     * Priority: 1. Active session -> 2. Long-term token in cookies.
      */
     public function __construct()
     {
-        // --- 1. Попытка авторизации по активной сессии ---
+        // --- 1. Attempt to authorize via active session ---
         $userFromSession = User::where('session', '=', session()->id(true))
                                ->where('ip', '=', get_ip_address())
                                ->first();
 
         if( $userFromSession ) {
-            // Обновляем временную метку активности
+            // Update the activity timestamp
             $userFromSession->unixtime = time();
             $userFromSession->save();
 
@@ -45,21 +45,21 @@ final class Auth
             return;
         }
 
-        // --- 2. Попытка авторизации по долгосрочному токену (куки) ---
+        // --- 2. Attempt to authorize via long-term token (cookie) ---
         $token = cookies()->token;
 
         if( !empty($token) && is_uuid($token) ) {
             $userFromToken = User::where('token', '=', $token)->first();
 
             if( $userFromToken ) {
-                // Токен валиден. Обновляем сессию и IP для этого пользователя.
+                // Token is valid. Update the session and IP for this user.
                 $userFromToken->session  = session()->id(true);
                 $userFromToken->unixtime = time();
                 $userFromToken->ip       = get_ip_address();
 
                 $userFromToken->save();
 
-                // Обновляем куки, чтобы продлить срок его жизни (сбросить таймер)
+                // Update the cookie to extend its lifetime (reset the timer)
                 cookies()->token = $token;
 
                 $this->authorized = true;
@@ -68,33 +68,33 @@ final class Auth
                 return;
             }
 
-            // Токен есть в куках, но не найден в БД (устарел, удален) — удаляем его из куки
+            // Token exists in cookies, but not found in DB (expired, deleted) — remove it from the cookie
             unset( cookies()->token );
         }
     }
 
     /**
-     * Аутентификация пользователя по email и паролю.
+     * Authenticate a user by email and password.
      *
-     * @param string $email    Email пользователя.
-     * @param string $password Пароль (в чистом виде).
-     * @param bool   $remember Флаг "Запомнить меня". Если true, будет сгенерирован и сохранен
-     *                         долгосрочный токен в куки.
-     * @return bool true в случае успеха, false при неудаче.
+     * @param string $email    User email.
+     * @param string $password Password (plain text).
+     * @param bool   $remember "Remember me" flag. If true, a long-term token will be generated and saved
+     *                         in cookies.
+     * @return bool true on success, false on failure.
      */
     public function signin(string $email, string $password, bool $remember = false): bool
     {
-        // Базовая валидация
+        // Basic validation
         if( !is_email($email) ) {
             return false;
         }
 
-        // Rate limiting: не более 5 попыток за 15 минут (только проверка, без инкремента)
+        // Rate limiting: no more than 5 attempts per 15 minutes (check only, without increment)
         if( $this->isRateLimited($email) ) {
             return false;
         }
 
-        // Поиск пользователя по email
+        // Find user by email
         $user = User::where('email', '=', $email)->first();
 
         if( !$user ) {
@@ -102,26 +102,26 @@ final class Auth
             return false;
         }
 
-        // Проверка пароля
+        // Password check
         if( password_verify($password, $user->password) ) {
-            // bcrypt — ок
+            // bcrypt — ok
         } elseif( password_verify_legacy($password, $user->password) ) {
-            // Перехешируем старый пароль на bcrypt
+            // Rehash the old password to bcrypt
             $user->password = password_crypt($password);
         } else {
             $this->incrementRateLimit($email);
             return false;
         }
 
-        // Регенерируем ID сессии для предотвращения session fixation
+        // Regenerate session ID to prevent session fixation
         session()->regenerate();
 
-        // Обновление данных сессии
+        // Update session data
         $user->session  = session()->id(true);
         $user->unixtime = time();
         $user->ip       = get_ip_address();
 
-        // Обработка "Запомнить меня"
+        // Handle "Remember me"
         if( $remember ) {
             if( empty($user->token) ) {
                 $user->token = uuid();
@@ -140,25 +140,25 @@ final class Auth
         $this->authorized = true;
         $this->user       = $user;
 
-        // Сбрасываем счётчик попыток после успешного входа
+        // Reset the attempt counter after a successful login
         $this->resetRateLimit($email);
 
         return true;
     }
 
     /**
-     * Деавторизация пользователя (выход).
-     * Очищает сессию, токен (если есть) и уничтожает сессию PHP.
+     * Deauthorize the user (logout).
+     * Clears the session, the token (if any) and destroys the PHP session.
      */
     public function signout(): void
     {
         if( $this->authorized && $this->user ) {
-            // Очищаем данные пользователя
+            // Clear user data
             $this->user->session  = '';
             $this->user->unixtime = 0;
             $this->user->ip       = '';
 
-            // Если был токен, удаляем его (полный выход)
+            // If there was a token, remove it (full logout)
             if( $this->user->token ) {
                 $this->user->token = null;
 
@@ -170,15 +170,15 @@ final class Auth
             $this->user       = null;
             $this->authorized = false;
 
-            // Уничтожаем PHP сессию
+            // Destroy the PHP session
             session()->destroy();
         }
     }
 
     /**
-     * Возвращает объект текущего пользователя.
+     * Returns the current user object.
      *
-     * @return User|null Объект User или null, если пользователь не авторизован.
+     * @return User|null The User object or null if the user is not authorized.
      */
     public function user(): ?User
     {
@@ -186,9 +186,9 @@ final class Auth
     }
 
     /**
-     * Возвращает ID текущего пользователя.
+     * Returns the current user's ID.
      *
-     * @return int|null ID пользователя или null.
+     * @return int|null The user ID or null.
      */
     public function id(): ?int
     {
@@ -196,9 +196,9 @@ final class Auth
     }
 
     /**
-     * Проверяет, авторизован ли пользователь.
+     * Checks whether the user is authorized.
      *
-     * @return bool true, если авторизован, иначе false.
+     * @return bool true if authorized, otherwise false.
      */
     public function check(): bool
     {
@@ -206,11 +206,11 @@ final class Auth
     }
 
     /**
-     * Проверяет, не превышен ли лимит попыток входа.
-     * Не более 5 попыток за 15 минут с одного IP/email.
+     * Checks whether the login attempt limit is exceeded.
+     * No more than 5 attempts per 15 minutes from one IP/email.
      *
      * @param string $email
-     * @return bool true если лимит превышен
+     * @return bool true if the limit is exceeded
      */
     private function isRateLimited(string $email): bool
     {
@@ -224,7 +224,7 @@ final class Auth
     }
 
     /**
-     * Инкрементирует счётчик неудачных попыток входа.
+     * Increments the counter of failed login attempts.
      *
      * @param string $email
      */
@@ -241,7 +241,7 @@ final class Auth
     }
 
     /**
-     * Сбрасывает счётчик попыток после успешного входа.
+     * Resets the attempt counter after a successful login.
      *
      * @param string $email
      */
@@ -255,7 +255,7 @@ final class Auth
     }
 
     /**
-     * Ключ кеша для rate limiting.
+     * Cache key for rate limiting.
      *
      * @param string $email
      * @return string
@@ -266,7 +266,7 @@ final class Auth
     }
 
     /**
-     * Проверяет доступность кеша.
+     * Checks cache availability.
      *
      * @return bool
      */

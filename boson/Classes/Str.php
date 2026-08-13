@@ -4,20 +4,20 @@
 * @author    Tishchenko Alexander (info@alex-tisch.ru)
 * @copyright Copyright (c) 2018 All rights reserved.
 *
-* Оптимизированная версия для PHP 8.0 с сохранением обратной совместимости.
+* Optimized version for PHP 8.0 with backward compatibility preserved.
 */
 
 class Str
 {
     public static function ucfirst($str)
     {
-        // Предпочитаем mbstring, если доступен
+        // Prefer mbstring if available
         if (function_exists('mb_strlen')) {
             return mb_strtoupper(mb_substr($str, 0, 1, 'UTF-8'), 'UTF-8')
                 . mb_substr($str, 1, mb_strlen($str, 'UTF-8'), 'UTF-8');
         }
 
-        // Windows‑1251‑фолбэк через iconv (сохранено для обратной совместимости)
+        // Windows-1251 fallback via iconv (kept for backward compatibility)
         if (function_exists('iconv')) {
             return iconv('windows-1251', 'utf-8',
                 ucfirst(iconv('utf-8', 'windows-1251', $str))
@@ -27,7 +27,7 @@ class Str
         return ucfirst($str);
     }
 
-    public static function lower($str)             // Добавлен обязательный параметр $str
+    public static function lower($str)             // Added required parameter $str
     {
         if (function_exists('mb_strtolower')) {
             return mb_strtolower($str, 'UTF-8');
@@ -42,7 +42,7 @@ class Str
         return strtolower($str);
     }
 
-    public static function upper($str)             // Добавлен обязательный параметр $str
+    public static function upper($str)             // Added required parameter $str
     {
         if (function_exists('mb_strtoupper')) {
             return mb_strtoupper($str, 'UTF-8');
@@ -97,9 +97,9 @@ class Str
     }
 
     /**
-     * Обрезает строку до ближайшего пробела, не превышая заданную длину.
+     * Truncates the string to the nearest space without exceeding the given length.
      */
-    public static function crop($string, $length = 80)      // $length теперь явный параметр
+    public static function crop($string, $length = 80)      // $length is now an explicit parameter
     {
         $string = strip_tags($string);
 
@@ -108,7 +108,7 @@ class Str
                 ? mb_strripos(mb_substr($string, 0, $length, 'UTF-8'), ' ', 0, 'UTF-8')
                 : $length;
 
-            if ($len === false) {          // если пробел не найден в подстроке
+            if ($len === false) {          // if no space is found in the substring
                 $len = $length;
             }
 
@@ -125,7 +125,7 @@ class Str
             return iconv('windows-1251', 'utf-8', $result1251);
         }
 
-        // Чистый однобайтовый фолбэк
+        // Pure single-byte fallback
         $len = (strlen($string) > $length)
             ? strripos(substr($string, 0, $length), ' ')
             : $length;
@@ -166,7 +166,7 @@ class Str
             return $string;
         }
 
-        // Однобайтовый фолбэк
+        // Single-byte fallback
         if (isset($string[$length])) {
             $length -= min($length, strlen($etc));
 

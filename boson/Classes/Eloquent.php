@@ -45,12 +45,12 @@ class Eloquent
     }
     
     /**
-     * Разбирает конфигурацию БД (database.ini) в массив соединений.
+     * Parses the DB configuration (database.ini) into an array of connections.
      *
-     * Каждая секция ini-файла — отдельное соединение. Секция `[default]`
-     * используется как соединение по умолчанию.
+     * Each ini-file section is a separate connection. The `[default]` section
+     * is used as the default connection.
      *
-     * @return array Массив вида [имя_соединения => конфиг соединения]
+     * @return array Array of the form [connection_name => connection config]
      */
     protected function parseConnections(): array
     {
@@ -90,12 +90,12 @@ class Eloquent
     }
     
     /**
-     * Определяет имя соединения для запроса.
+     * Determines the connection name for a query.
      *
-     * Если соединение не передано явно, возвращает `default` (при его наличии)
-     * либо первое зарегистрированное соединение.
+     * If no connection is passed explicitly, returns `default` (if present)
+     * or the first registered connection.
      *
-     * @param string|null $connection Имя соединения или null
+     * @param string|null $connection Connection name or null
      * @return string
      */
     protected function resolveConnection($connection = null): string
@@ -116,7 +116,7 @@ class Eloquent
     }
     
     /**
-     * Экранирует имя таблицы/БД обратными кавычками.
+     * Escapes a table/DB name with backticks.
      */
     protected function quoteIdentifier(string $identifier): string
     {

@@ -5,10 +5,10 @@
  * @copyright Copyright (c) 2018-2024 All rights reserved
  * @version   2.1
  *
- * Класс для безопасной работы с входными данными HTTP-запроса.
- * Унифицирует доступ к GET/POST/PUT/PATCH/DELETE/JSON параметрам,
- * заголовкам, файлам и cookie. Предоставляет XSS-защиту,
- * валидацию ключей, типизированный доступ и множество helper-методов.
+ * Class for safe handling of HTTP request input data.
+ * Unifies access to GET/POST/PUT/PATCH/DELETE/JSON parameters,
+ * headers, files and cookies. Provides XSS protection,
+ * key validation, typed access and many helper methods.
  */
 
 use Boson\Traits\SingletonTrait;
@@ -19,62 +19,62 @@ final class Input extends Registry
     use SingletonTrait;
 
     /**
-     * Кешированный Bearer токен
-     * false = пытались извлечь, но не нашли
-     * null  = ещё не извлекали
+     * Cached Bearer token
+     * false = tried to extract, but not found
+     * null  = not extracted yet
      */
     protected $bearer = null;
 
     /**
-     * HTTP-метод запроса (кеш)
+     * HTTP request method (cache)
      */
     protected $method = null;
 
     /**
-     * HTTP-заголовки запроса (кеш)
+     * HTTP request headers (cache)
      *
      * @var array<string, string>|null
      */
     protected $headersCache = null;
 
     /**
-     * "Сырые" данные запроса (php://input) (кеш)
+     * "Raw" request data (php://input) (cache)
      */
     protected $rawInput = null;
 
     /**
-     * Распарсенное JSON-тело запроса (кеш)
+     * Parsed JSON request body (cache)
      */
     protected $jsonPayload = null;
 
     /**
-     * Данные из PUT/PATCH/DELETE (кеш)
+     * Data from PUT/PATCH/DELETE (cache)
      */
     protected $methodPayload = null;
 
     /**
-     * Строгий режим валидации ключей.
-     * Если true — при обнаружении недопустимых символов в ключе
-     * вызывается abort() (поведение старой версии).
-     * Если false — такие ключи просто пропускаются.
+     * Strict key validation mode.
+     * If true — when disallowed characters are detected in a key
+     * abort() is called (old version behavior).
+     * If false — such keys are simply skipped.
      */
     protected $strictKeyValidation = false;
 
     /**
-     * Кеш XSS-очищенных значений.
+     * Cache of XSS-cleaned values.
      *
      * @var array<string, mixed>
      */
     protected $xss_cache = [];
 
     /**
-     * Конструктор: собирает входные данные из всех источников.
+     * Constructor: collects input data from all sources.
      */
     public function __construct()
     {
         $this->properties['headers'] = [];
 
-        // Строгий режим из конфига
+        // Strict mode from config
         if( function_exists('cfg') ) {
             $strict = cfg('config', 'input_strict_key_validation');
             $this->strictKeyValidation = ($strict === 'on' || $strict === '1' || $strict === 'true');
@@ -86,15 +86,15 @@ final class Input extends Registry
         // POST
         $this->ingest($_POST ?? []);
 
-        // PUT/PATCH/DELETE тело (application/x-www-form-urlencoded or JSON)
+        // PUT/PATCH/DELETE body (application/x-www-form-urlencoded or JSON)
         $this->ingest($this->getMethodPayload());
 
-        // Предварительно извлекаем Bearer (сохраняем обратную совместимость)
+        // Pre-extract Bearer (preserve backward compatibility)
         $this->getBearerToken();
     }
 
     /**
-     * Загружает данные массива в хранилище, очищая ключи и значения.
+     * Loads array data into storage, cleaning keys and values.
      *
      * @param array<string|int, mixed> $data
      */
@@ -116,11 +116,11 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * Публичный API — базовый доступ
+     * Public API — basic access
      * ---------------------------------------------------------------------- */
 
     /**
-     * Возвращает все входные данные с XSS-очисткой.
+     * Returns all input data with XSS cleaning.
      *
      * @return array<string, mixed>
      */
@@ -136,10 +136,10 @@ final class Input extends Registry
     }
 
     /**
-     * Получить входное значение по имени (с XSS-очисткой).
+     * Get an input value by name (with XSS cleaning).
      *
-     * @param string     $name    Имя параметра
-     * @param mixed|null $default Значение по умолчанию
+     * @param string     $name    Parameter name
+     * @param mixed|null $default Default value
      */
     public function input($name, $default = null)
     {
@@ -149,7 +149,7 @@ final class Input extends Registry
     }
 
     /**
-     * Проверка наличия заполненного значения (не null, не пустая строка, не пустой массив).
+     * Checks for a filled value (not null, not an empty string, not an empty array).
      */
     public function filled($name)
     {
@@ -167,7 +167,7 @@ final class Input extends Registry
     }
 
     /**
-     * Обратное к filled — значение отсутствует или пустое.
+     * Opposite of filled — the value is missing or empty.
      */
     public function missing($name): bool
     {
@@ -175,7 +175,7 @@ final class Input extends Registry
     }
 
     /**
-     * Вернуть только указанные ключи.
+     * Return only the specified keys.
      *
      * @param string[]|string $keys
      * @return array<string, mixed>
@@ -195,7 +195,7 @@ final class Input extends Registry
     }
 
     /**
-     * Вернуть все данные, кроме указанных ключей.
+     * Return all data except the specified keys.
      *
      * @param string[]|string $keys
      * @return array<string, mixed>
@@ -213,11 +213,11 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * Типизированный доступ (без XSS, специально для чисел/булевых/дат)
+     * Typed access (no XSS, specifically for numbers/booleans/dates)
      * ---------------------------------------------------------------------- */
 
     /**
-     * Получить значение как целое число.
+     * Get a value as an integer.
      */
     public function int($name, $default = 0): int
     {
@@ -229,7 +229,7 @@ final class Input extends Registry
     }
 
     /**
-     * Получить значение как число с плавающей точкой.
+     * Get a value as a float.
      */
     public function float($name, $default = 0.0): float
     {
@@ -241,10 +241,10 @@ final class Input extends Registry
     }
 
     /**
-     * Получить значение как булево.
-     * Строки '1', 'true', 'yes', 'on' → true.
-     * Строки '0', 'false', 'no', 'off', '' → false.
-     * Остальное — обычное (bool) приведение.
+     * Get a value as a boolean.
+     * Strings '1', 'true', 'yes', 'on' → true.
+     * Strings '0', 'false', 'no', 'off', '' → false.
+     * Everything else — normal (bool) casting.
      */
     public function bool($name, $default = false): bool
     {
@@ -274,7 +274,7 @@ final class Input extends Registry
     }
 
     /**
-     * Получить значение как строку (с XSS-очисткой).
+     * Get a value as a string (with XSS cleaning).
      */
     public function string($name, $default = ''): string
     {
@@ -286,7 +286,7 @@ final class Input extends Registry
     }
 
     /**
-     * Получить значение как массив.
+     * Get a value as an array.
      */
     public function array($name, $default = []): array
     {
@@ -300,11 +300,11 @@ final class Input extends Registry
     }
 
     /**
-     * Получить значение как объект DateTime.
+     * Get a value as a DateTime object.
      *
-     * @param string      $name    Имя параметра
-     * @param string|null $format  Формат даты (например 'Y-m-d'). Если null — strtotime.
-     * @param mixed|null  $default Значение по умолчанию
+     * @param string      $name    Parameter name
+     * @param string|null $format  Date format (e.g. 'Y-m-d'). If null — strtotime.
+     * @param mixed|null  $default Default value
      * @return \DateTime|null
      */
     public function date($name, $format = null, $default = null)
@@ -328,14 +328,14 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * GET и POST раздельно
+     * GET and POST separately
      * ---------------------------------------------------------------------- */
 
     /**
-     * Получить значение только из GET-параметров (с XSS-очисткой).
+     * Get a value only from GET parameters (with XSS cleaning).
      *
-     * @param string|null $key     Имя параметра или null для всего массива
-     * @param mixed|null  $default Значение по умолчанию
+     * @param string|null $key     Parameter name or null for the entire array
+     * @param mixed|null  $default Default value
      * @return mixed
      */
     public function query($key = null, $default = null)
@@ -362,10 +362,10 @@ final class Input extends Registry
     }
 
     /**
-     * Получить значение только из POST-параметров (с XSS-очисткой).
+     * Get a value only from POST parameters (with XSS cleaning).
      *
-     * @param string|null $key     Имя параметра или null для всего массива
-     * @param mixed|null  $default Значение по умолчанию
+     * @param string|null $key     Parameter name or null for the entire array
+     * @param mixed|null  $default Default value
      * @return mixed
      */
     public function post($key = null, $default = null)
@@ -396,7 +396,7 @@ final class Input extends Registry
      * ---------------------------------------------------------------------- */
 
     /**
-     * Проверяет, является ли запрос JSON.
+     * Checks whether the request is JSON.
      */
     public function isJson(): bool
     {
@@ -406,8 +406,8 @@ final class Input extends Registry
     }
 
     /**
-     * Проверяет, ожидает ли клиент JSON-ответ.
-     * True если AJAX или Accept содержит /json или +json.
+     * Checks whether the client expects a JSON response.
+     * True if AJAX or Accept contains /json or +json.
      */
     public function expectsJson(): bool
     {
@@ -421,9 +421,9 @@ final class Input extends Registry
     }
 
     /**
-     * Получить Bearer токен из заголовка Authorization.
+     * Get the Bearer token from the Authorization header.
      *
-     * @return string|false Токен или false, если не найден
+     * @return string|false Token or false if not found
      */
     public function getBearerToken()
     {
@@ -444,7 +444,7 @@ final class Input extends Registry
     }
 
     /**
-     * Alias для getBearerToken() в современном стиле.
+     * Modern-style alias for getBearerToken().
      */
     public function bearerToken()
     {
@@ -452,11 +452,11 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * HTTP-метод
+     * HTTP method
      * ---------------------------------------------------------------------- */
 
     /**
-     * Возвращает HTTP-метод запроса (в верхнем регистре).
+     * Returns the HTTP request method (uppercase).
      */
     public function method()
     {
@@ -467,7 +467,7 @@ final class Input extends Registry
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $method = strtoupper($method);
 
-        // Поддержка method override
+        // Method override support
         if( $method === 'POST' ) {
             $override = $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE']
                      ?? ($_POST['_method'] ?? null);
@@ -485,7 +485,7 @@ final class Input extends Registry
     }
 
     /**
-     * Проверить совпадение метода (регистр не важен).
+     * Check the method match (case-insensitive).
      */
     public function isMethod($name): bool
     {
@@ -501,7 +501,7 @@ final class Input extends Registry
     public function isOptions(): bool { return $this->isMethod('OPTIONS'); }
 
     /**
-     * AJAX-запрос?
+     * AJAX request?
      */
     public function isAjax(): bool
     {
@@ -531,11 +531,11 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * Заголовки
+     * Headers
      * ---------------------------------------------------------------------- */
 
     /**
-     * Получить все HTTP-заголовки.
+     * Get all HTTP headers.
      *
      * @return array<string, string>
      */
@@ -557,7 +557,7 @@ final class Input extends Registry
             }
         }
 
-        // Фоллбек / дополнение из $_SERVER (HTTP_*)
+        // Fallback / supplement from $_SERVER (HTTP_*)
         foreach($_SERVER as $key => $val) {
             if( str_starts_with((string)$key, 'HTTP_') ) {
                 $name = $this->normalizeHeaderName(substr($key, 5));
@@ -568,14 +568,14 @@ final class Input extends Registry
             }
         }
 
-        // Отдельные "не HTTP_*" заголовки
+        // Separate "non-HTTP_*" headers
         foreach(['CONTENT_TYPE', 'CONTENT_LENGTH', 'CONTENT_MD5'] as $key) {
             if( isset($_SERVER[$key]) ) {
                 $headers[ $this->normalizeHeaderName($key) ] = (string)$_SERVER[ $key ];
             }
         }
 
-        // Authorization header (некоторые серверы прячут его)
+        // Authorization header (some servers hide it)
         if( !isset($headers['Authorization']) ) {
             if( isset($_SERVER['Authorization']) ) {
                 $headers['Authorization'] = (string)$_SERVER['Authorization'];
@@ -592,9 +592,9 @@ final class Input extends Registry
     }
 
     /**
-     * Получить конкретный HTTP-заголовок.
+     * Get a specific HTTP header.
      *
-     * @param string     $name    Имя заголовка (регистронезависимо)
+     * @param string     $name    Header name (case-insensitive)
      * @param mixed|null $default
      */
     public function header($name, $default = null)
@@ -602,12 +602,12 @@ final class Input extends Registry
         $name    = $this->normalizeHeaderName($name);
         $headers = $this->headers();
 
-        // Точное совпадение по нормализованному имени
+        // Exact match by normalized name
         if( isset($headers[$name]) ) {
             return $headers[ $name ];
         }
 
-        // Регистронезависимый поиск
+        // Case-insensitive search
         foreach($headers as $hKey => $hVal) {
             if( strcasecmp($hKey, $name) === 0 ) {
                 return $hVal;
@@ -618,7 +618,7 @@ final class Input extends Registry
     }
 
     /**
-     * Нормализует имя заголовка: HTTP_X_REQUESTED_WITH => X-Requested-With.
+     * Normalizes a header name: HTTP_X_REQUESTED_WITH => X-Requested-With.
      */
     protected function normalizeHeaderName($name)
     {
@@ -633,7 +633,7 @@ final class Input extends Registry
      * ---------------------------------------------------------------------- */
 
     /**
-     * Получить значение cookie.
+     * Get a cookie value.
      */
     public function cookie($name, $default = null)
     {
@@ -641,7 +641,7 @@ final class Input extends Registry
     }
 
     /**
-     * Получить значение из $_SERVER.
+     * Get a value from $_SERVER.
      */
     public function server($name, $default = null)
     {
@@ -649,7 +649,7 @@ final class Input extends Registry
     }
 
     /**
-     * Получить IP-адрес клиента (с учётом прокси).
+     * Get the client IP address (taking proxies into account).
      */
     public function ip()
     {
@@ -681,7 +681,7 @@ final class Input extends Registry
     }
 
     /**
-     * User-Agent клиента.
+     * Client User-Agent.
      */
     public function userAgent()
     {
@@ -689,7 +689,7 @@ final class Input extends Registry
     }
 
     /**
-     * URI запроса.
+     * Request URI.
      */
     public function uri()
     {
@@ -697,7 +697,7 @@ final class Input extends Registry
     }
 
     /**
-     * Путь без query string.
+     * Path without the query string.
      */
     public function path()
     {
@@ -708,11 +708,11 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * Файлы
+     * Files
      * ---------------------------------------------------------------------- */
 
     /**
-     * Получить массив описания загруженного файла.
+     * Get the description array of an uploaded file.
      *
      * @return array<string, mixed>|null
      */
@@ -722,7 +722,7 @@ final class Input extends Registry
     }
 
     /**
-     * Проверка наличия успешно загруженного файла.
+     * Checks for the presence of a successfully uploaded file.
      */
     public function hasFile($name): bool
     {
@@ -732,7 +732,7 @@ final class Input extends Registry
             return false;
         }
 
-        // Массив файлов (multi upload)
+        // Array of files (multi upload)
         if( is_array($f['error'] ?? null) ) {
             foreach($f['error'] as $err) {
                 if( $err === UPLOAD_ERR_OK ) {
@@ -747,7 +747,7 @@ final class Input extends Registry
     }
 
     /**
-     * Все файлы запроса.
+     * All files of the request.
      *
      * @return array<string, array<string, mixed>>
      */
@@ -761,7 +761,7 @@ final class Input extends Registry
      * ---------------------------------------------------------------------- */
 
     /**
-     * Получить "сырые" данные из php://input.
+     * Get the "raw" data from php://input.
      */
     public function raw()
     {
@@ -775,10 +775,10 @@ final class Input extends Registry
     }
 
     /**
-     * Получить JSON-тело запроса в виде массива.
+     * Get the JSON request body as an array.
      *
-     * @param string|null $key     Опциональный ключ внутри JSON
-     * @param mixed|null  $default Значение по умолчанию
+     * @param string|null $key     Optional key inside JSON
+     * @param mixed|null  $default Default value
      */
     public function json($key = null, $default = null)
     {
@@ -809,7 +809,7 @@ final class Input extends Registry
     }
 
     /**
-     * Возвращает данные из тела PUT/PATCH/DELETE (form-urlencoded или JSON).
+     * Returns data from the PUT/PATCH/DELETE body (form-urlencoded or JSON).
      *
      * @return array<string, mixed>
      */
@@ -847,11 +847,11 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * Внутренние методы очистки (обратная совместимость)
+     * Internal cleaning methods (backward compatibility)
      * ---------------------------------------------------------------------- */
 
     /**
-     * Получение значения с XSS-очисткой (с кэшированием).
+     * Get a value with XSS cleaning (with caching).
      */
     protected function getClean($name = null)
     {
@@ -867,10 +867,10 @@ final class Input extends Registry
     }
 
     /**
-     * Валидация ключа. Допустимы: буквы, цифры, _ - / : .
+     * Key validation. Allowed: letters, digits, _ - / : .
      *
-     * В мягком режиме возвращает null для невалидных ключей,
-     * в строгом — вызывает abort().
+     * In soft mode returns null for invalid keys,
+     * in strict mode calls abort().
      */
     protected function _clean_key($str)
     {
@@ -886,7 +886,7 @@ final class Input extends Registry
     }
 
     /**
-     * Рекурсивная очистка значений: нормализация переносов строк.
+     * Recursive value cleaning: line break normalization.
      */
     protected function _clean_val($val)
     {
@@ -907,7 +907,7 @@ final class Input extends Registry
         }
 
         if( !is_scalar($val) && $val !== null ) {
-            // Объекты и ресурсы — не трогаем (безопаснее вернуть как есть)
+            // Objects and resources — leave untouched (safer to return as-is)
             return $val;
         }
 
@@ -915,7 +915,7 @@ final class Input extends Registry
     }
 
     /**
-     * XSS-фильтрация строки или массива.
+     * XSS filtering of a string or array.
      */
     protected function _xss_clean($data)
     {
@@ -946,7 +946,7 @@ final class Input extends Registry
         $data = preg_replace('/(&#x*[0-9A-F]+);*/iu', '$1;', $data);
         $data = html_entity_decode($data, ENT_COMPAT, 'UTF-8');
 
-        // Удаление атрибутов on* и xmlns
+        // Remove on* and xmlns attributes
         $data = preg_replace('#(<[^>]+?[\x00-\x20"\'])(?:on|xmlns)[^>]*+>#iu', '$1>', $data);
 
         // javascript:/vbscript:/-moz-binding:
@@ -980,7 +980,7 @@ final class Input extends Registry
         // Namespaced elements
         $data = preg_replace('#</*\w+:\w[^>]*+>#i', '', $data);
 
-        // Нежелательные теги
+        // Unwanted tags
         do {
             $old  = $data;
             $data = preg_replace(
@@ -995,11 +995,11 @@ final class Input extends Registry
     }
 
     /* -------------------------------------------------------------------------
-     * Настройки
+     * Settings
      * ---------------------------------------------------------------------- */
 
     /**
-     * Включить/выключить строгую валидацию ключей.
+     * Enable/disable strict key validation.
      */
     public function setStrictKeyValidation($strict): self
     {

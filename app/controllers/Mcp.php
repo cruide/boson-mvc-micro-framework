@@ -75,19 +75,19 @@ class Mcp
                 'tools' => [
                     [
                         'name'        => 'list_user',
-                        'description' => 'Получение списка пользователей с возможностью фильтрации по имени и email',
+                        'description' => 'Get a list of users with filtering by name and email',
                         'inputSchema' => [
                             'type'       => 'object',
                             'properties' => [
-                                'name'  => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Фильтр по имени пользователя (поиск по подстроке)'],
-                                'email' => ['type' => 'string', 'minLength' => 3, 'maxLength' => 254, 'description' => 'Фильтр по email (поиск по подстроке)'],
+                                'name'  => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Filter by user name (substring search)'],
+                                'email' => ['type' => 'string', 'minLength' => 3, 'maxLength' => 254, 'description' => 'Filter by email (substring search)'],
                             ],
                             'required' => [],
                         ],
                     ],
                     [
                         'name'        => 'show_user',
-                        'description' => 'Получение полных данных пользователя по его ID, включая профиль',
+                        'description' => 'Get full user data by their ID, including the profile',
                         'inputSchema' => [
                             'type'       => 'object',
                             'properties' => [
@@ -98,22 +98,22 @@ class Mcp
                     ],
                     [
                         'name'        => 'create_user',
-                        'description' => 'Создание нового пользователя с профилем. Обязательные поля: name, email, password',
+                        'description' => 'Create a new user with a profile. Required fields: name, email, password',
                         'inputSchema' => [
                             'type'       => 'object',
                             'properties' => [
-                                'name'     => ['type' => 'string', 'minLength' => 5, 'maxLength' => 128, 'pattern' => '^[a-zA-Z0-9_]+$', 'description' => 'Уникальное имя пользователя (логин)'],
-                                'email'    => ['type' => 'string', 'minLength' => 7, 'maxLength' => 254, 'format' => 'email', 'description' => 'Email адрес пользователя'],
-                                'password' => ['type' => 'string', 'minLength' => 6, 'maxLength' => 64, 'description' => 'Пароль пользователя'],
+                                'name'     => ['type' => 'string', 'minLength' => 5, 'maxLength' => 128, 'pattern' => '^[a-zA-Z0-9_]+$', 'description' => 'Unique user name (login)'],
+                                'email'    => ['type' => 'string', 'minLength' => 7, 'maxLength' => 254, 'format' => 'email', 'description' => 'User email address'],
+                                'password' => ['type' => 'string', 'minLength' => 6, 'maxLength' => 64, 'description' => 'User password'],
                                 'profile'  => [
                                     'type'       => 'object',
-                                    'description' => 'Данные профиля пользователя',
+                                    'description' => 'User profile data',
                                     'properties' => [
-                                        'first_name'  => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Имя'],
-                                        'middle_name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Отчество'],
-                                        'last_name'   => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Фамилия'],
-                                        'birthday'    => ['type' => 'string', 'format' => 'date', 'description' => 'Дата рождения в формате YYYY-MM-DD'],
-                                        'gender'      => ['type' => 'integer', 'minimum' => 0, 'maximum' => 2, 'description' => '0 — Мужской, 1 — Женский, 2 — Другой'],
+                                        'first_name'  => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'First name'],
+                                        'middle_name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Middle name'],
+                                        'last_name'   => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Last name'],
+                                        'birthday'    => ['type' => 'string', 'format' => 'date', 'description' => 'Date of birth in YYYY-MM-DD format'],
+                                        'gender'      => ['type' => 'integer', 'minimum' => 0, 'maximum' => 2, 'description' => '0 — Male, 1 — Female, 2 — Other'],
                                     ],
                                     'required' => [],
                                 ],
@@ -123,23 +123,23 @@ class Mcp
                     ],
                     [
                         'name'        => 'update_user',
-                        'description' => 'Обновление данных профиля пользователя по его ID',
+                        'description' => 'Update user profile data by their ID',
                         'inputSchema' => [
                             'type'       => 'object',
                             'properties' => [
                                 'id'          => ['type' => 'integer', 'description' => 'User ID'],
-                                'first_name'  => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Имя'],
-                                'middle_name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Отчество'],
-                                'last_name'   => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Фамилия'],
-                                'birthday'    => ['type' => 'string', 'format' => 'date', 'description' => 'Дата рождения в формате YYYY-MM-DD'],
-                                'gender'      => ['type' => 'integer', 'minimum' => 0, 'maximum' => 2, 'description' => '0 — Мужской, 1 — Женский, 2 — Другой'],
+                                'first_name'  => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'First name'],
+                                'middle_name' => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Middle name'],
+                                'last_name'   => ['type' => 'string', 'minLength' => 1, 'maxLength' => 128, 'description' => 'Last name'],
+                                'birthday'    => ['type' => 'string', 'format' => 'date', 'description' => 'Date of birth in YYYY-MM-DD format'],
+                                'gender'      => ['type' => 'integer', 'minimum' => 0, 'maximum' => 2, 'description' => '0 — Male, 1 — Female, 2 — Other'],
                             ],
                             'required' => ['id'],
                         ],
                     ],
                     [
                         'name'        => 'delete_user',
-                        'description' => 'Удаление пользователя по его ID (вместе с профилем)',
+                        'description' => 'Delete a user by their ID (along with the profile)',
                         'inputSchema' => [
                             'type'       => 'object',
                             'properties' => [
@@ -158,8 +158,8 @@ class Mcp
      */
     public function tools_call()
     {
-        // Для POST с JSON-телом используем input()->json(),
-        // т.к. input()->all() не парсит JSON для POST-запросов
+        // For POST with a JSON body, use input()->json(),
+        // since input()->all() does not parse JSON for POST requests
         $request   = input()->json() ?: input()->all();
         $arguments = $request['arguments'] ?? $request['params']['arguments'] ?? [];
 
@@ -242,11 +242,11 @@ class Mcp
     }
 
     // ========================================================================
-    //  Методы-обработчики инструментов
+    //  Tool handler methods
     // ========================================================================
 
     /**
-     * Получение списка пользователей с фильтрацией
+     * Get a list of users with filtering
      */
     protected function listUser(array $params): array
     {
@@ -264,29 +264,29 @@ class Mcp
     }
 
     /**
-     * Получение данных конкретного пользователя
+     * Get data of a specific user
      */
     protected function showUser(array $params): array
     {
         if (empty($params['id']) || !is_numeric($params['id'])) {
-            throw new \InvalidArgumentException('Параметр id обязателен и должен быть числом', -32602);
+            throw new \InvalidArgumentException('The id parameter is required and must be a number', -32602);
         }
 
         $user = User::with('profile')->find($params['id']);
 
         if (!$user) {
-            throw new \InvalidArgumentException("Пользователь с идентификатором {$params['id']} не найден", -32602);
+            throw new \InvalidArgumentException("User with identifier {$params['id']} not found", -32602);
         }
 
         return $user->toArray();
     }
 
     /**
-     * Создание пользователя с профилем
+     * Create a user with a profile
      */
     protected function createUser(array $params): array
     {
-        // Валидация
+        // Validation
         $validator = validator($params, [
             'name'     => 'required|minlen:5|maxlen:128',
             'email'    => 'required|email|maxlen:254',
@@ -296,21 +296,21 @@ class Mcp
         if ($validator->fails()) {
             $errors = $validator->errors();
             throw new \InvalidArgumentException(
-                'Ошибка валидации: ' . implode('; ', array_map(fn($field, $msgs) => "$field: " . implode(', ', $msgs), array_keys($errors), $errors)),
+                'Validation error: ' . implode('; ', array_map(fn($field, $msgs) => "$field: " . implode(', ', $msgs), array_keys($errors), $errors)),
                 -32602
             );
         }
 
         $validated = $validator->validated();
 
-        // Проверка уникальности email
+        // Check email uniqueness
         if (User::where('email', $validated['email'])->exists()) {
-            throw new \InvalidArgumentException("Пользователь с email {$validated['email']} уже существует", -32602);
+            throw new \InvalidArgumentException("User with email {$validated['email']} already exists", -32602);
         }
 
-        // Проверка уникальности name
+        // Check name uniqueness
         if (User::where('name', $validated['name'])->exists()) {
-            throw new \InvalidArgumentException("Пользователь с именем {$validated['name']} уже существует", -32602);
+            throw new \InvalidArgumentException("User with name {$validated['name']} already exists", -32602);
         }
 
         try {
@@ -322,7 +322,7 @@ class Mcp
                 'password' => password_crypt($validated['password']),
             ]);
 
-            // Собираем данные профиля (если переданы)
+            // Collect profile data (if passed)
             $profileData   = ['user_id' => $user->id];
             $profileFields = ['first_name', 'middle_name', 'last_name', 'gender', 'birthday'];
             $profileInput  = $params['profile'] ?? [];
@@ -333,7 +333,7 @@ class Mcp
                 }
             }
 
-            // Валидация профиля, если есть что валидировать
+            // Validate the profile if there is anything to validate
             if (count($profileData) > 1) {
                 $profileRules = [
                     'first_name'  => 'minlen:1|maxlen:128',
@@ -349,7 +349,7 @@ class Mcp
                     db()->rollBack();
                     $errors = $profileValidator->errors();
                     throw new \InvalidArgumentException(
-                        'Ошибка валидации профиля: ' . implode('; ', array_map(fn($field, $msgs) => "$field: " . implode(', ', $msgs), array_keys($errors), $errors)),
+                        'Profile validation error: ' . implode('; ', array_map(fn($field, $msgs) => "$field: " . implode(', ', $msgs), array_keys($errors), $errors)),
                         -32602
                     );
                 }
@@ -359,10 +359,10 @@ class Mcp
 
             db()->commit();
         } catch (\InvalidArgumentException $e) {
-            throw $e; // Пробрасываем наши исключения валидации
+            throw $e; // Rethrow our validation exceptions
         } catch (\Exception $e) {
             db()->rollBack();
-            throw new \Exception('Ошибка при создании пользователя: ' . $e->getMessage(), -32603);
+            throw new \Exception('Error creating user: ' . $e->getMessage(), -32603);
         }
 
         $user->load('profile');
@@ -371,21 +371,21 @@ class Mcp
     }
 
     /**
-     * Обновление профиля пользователя
+     * Update user profile
      */
     protected function updateUser(array $params): array
     {
         if (empty($params['id']) || !is_numeric($params['id'])) {
-            throw new \InvalidArgumentException('Параметр id обязателен и должен быть числом', -32602);
+            throw new \InvalidArgumentException('The id parameter is required and must be a number', -32602);
         }
 
         $user = User::find($params['id']);
 
         if (!$user) {
-            throw new \InvalidArgumentException("Пользователь с идентификатором {$params['id']} не найден", -32602);
+            throw new \InvalidArgumentException("User with identifier {$params['id']} not found", -32602);
         }
 
-        // Отбираем поля профиля
+        // Pick profile fields
         $profileFields = ['first_name', 'middle_name', 'last_name', 'gender', 'birthday'];
         $profileInput  = [];
 
@@ -395,14 +395,14 @@ class Mcp
             }
         }
 
-        // Если нечего обновлять — возвращаем текущие данные
+        // If there is nothing to update — return the current data
         if (empty($profileInput)) {
             $user->load('profile');
 
             return $user->toArray();
         }
 
-        // Валидация
+        // Validation
         $rules = [
             'first_name'  => 'minlen:1|maxlen:128',
             'middle_name' => 'minlen:1|maxlen:128',
@@ -416,14 +416,14 @@ class Mcp
         if ($validator->fails()) {
             $errors = $validator->errors();
             throw new \InvalidArgumentException(
-                'Ошибка валидации: ' . implode('; ', array_map(fn($field, $msgs) => "$field: " . implode(', ', $msgs), array_keys($errors), $errors)),
+                'Validation error: ' . implode('; ', array_map(fn($field, $msgs) => "$field: " . implode(', ', $msgs), array_keys($errors), $errors)),
                 -32602
             );
         }
 
         $validated = $validator->validated();
 
-        // Обновляем/создаём профиль
+        // Update or create the profile
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             $validated
@@ -435,25 +435,25 @@ class Mcp
     }
 
     /**
-     * Удаление пользователя
+     * Delete user
      */
     protected function deleteUser(array $params): array
     {
         if (empty($params['id']) || !is_numeric($params['id'])) {
-            throw new \InvalidArgumentException('Параметр id обязателен и должен быть числом', -32602);
+            throw new \InvalidArgumentException('The id parameter is required and must be a number', -32602);
         }
 
         $user = User::find($params['id']);
 
         if (!$user) {
-            throw new \InvalidArgumentException("Пользователь с идентификатором {$params['id']} не найден", -32602);
+            throw new \InvalidArgumentException("User with identifier {$params['id']} not found", -32602);
         }
 
         $user->delete();
 
         return [
             'status'  => true,
-            'message' => "Пользователь с идентификатором {$params['id']} успешно удалён",
+            'message' => "User with identifier {$params['id']} successfully deleted",
         ];
     }
 }

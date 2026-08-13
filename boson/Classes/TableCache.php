@@ -6,8 +6,8 @@
 * @copyright Copyright (c) 2018 All rights reserved
 * @version   2.1
 *
-* Кеширование в таблице БД. Хранит сериализованные значения с TTL.
-* Поддерживает in-memory кеш для снижения числа запросов.
+* Caching in a database table. Stores serialized values with TTL.
+* Supports an in-memory cache to reduce the number of queries.
 */
 
 class TableCacheException extends \Exception {};
@@ -18,7 +18,7 @@ class TableCache
     protected static $key_has_cache = [];
     
     /**
-     * Удаляет просроченные записи из БД и сбрасывает in-memory кеш для них.
+     * Removes expired records from the DB and resets the in-memory cache for them.
      */
     public static function check()
     {
@@ -39,8 +39,8 @@ class TableCache
     }
     
     /**
-     * Проверяет существование ключа (с учётом срока действия).
-     * Результат кешируется в памяти до следующей check().
+     * Checks whether a key exists (taking expiry into account).
+     * The result is cached in memory until the next check().
      */
     public static function has($key)
     {
@@ -71,7 +71,7 @@ class TableCache
     }
     
     /**
-     * Возвращает значение из кеша (десериализованное).
+     * Returns the value from the cache (unserialized).
      */
     public static function get($key)
     {
@@ -85,21 +85,21 @@ class TableCache
     }
 
     /**
-     * Сохраняет значение в кеш.
+     * Stores a value in the cache.
      *
-     * @param string $key     Ключ
-     * @param mixed  $value   Значение (или callable для ленивого вычисления)
-     * @param int    $expire  Время жизни в секундах
-     * @return mixed          Сохранённое значение
+     * @param string $key     Key
+     * @param mixed  $value   Value (or callable for lazy evaluation)
+     * @param int    $expire  Lifetime in seconds
+     * @return mixed          Stored value
      */
     public static function put($key, $value, $expire = UNIXTIME_HOUR)
     {
-        // Вычисляем callable
+        // Evaluate the callable
         if( is_callable($value) && !is_string($value) ) {
             $value = $value();
         }
         
-        // Удаляем старую запись если есть
+        // Delete the old record if present
         if( self::has($key) ) {
             table(self::$table)->where('key', '=', $key)->delete();
             unset( self::$key_has_cache[$key] );
@@ -115,7 +115,7 @@ class TableCache
     }
 
     /**
-     * Возвращает значение из кеша или вычисляет, сохраняет и возвращает его.
+     * Returns the value from the cache or computes, stores and returns it.
      */
     public static function remember($key, \Closure $callback, $expire = UNIXTIME_HOUR)
     {
@@ -131,7 +131,7 @@ class TableCache
     }
     
     /**
-     * Возвращает значение и удаляет его из кеша.
+     * Returns the value and removes it from the cache.
      */
     public static function pull($key)
     {
@@ -148,7 +148,7 @@ class TableCache
     }
     
     /**
-     * Удаляет ключ из кеша.
+     * Removes a key from the cache.
      */
     public static function forget($key)
     {
@@ -159,7 +159,7 @@ class TableCache
     }
     
     /**
-     * Полная очистка кеша.
+     * Completely clears the cache.
      */
     public static function flush()
     {
@@ -170,7 +170,7 @@ class TableCache
     }
     
     /**
-     * Создаёт таблицу для кеша.
+     * Creates the cache table.
      */
     public static function install()
     {

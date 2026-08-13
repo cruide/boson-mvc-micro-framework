@@ -5,7 +5,7 @@ use App\Models\User;
 class Index
 {
 	/**
-	* Метод по умолчанию
+	* Default method
 	*/
 	public function index($id = null)
 	{
@@ -29,7 +29,7 @@ class Index
 	public function register()
 	{
 		if( !input()->expectsJson() ) {
-			abort('Некорректный запрос...');
+			abort('Invalid request...');
 		}
 		
 		if( auth()->check() ) {
@@ -45,7 +45,7 @@ class Index
 			return json_response([
 				'status' => 'error',
 				'data'   => [
-					'errorText' => 'Нет данных для обработки...',
+					'errorText' => 'No data to process...',
 				],
 			]);
 		}
@@ -54,7 +54,7 @@ class Index
 			return json_response([
 				'status' => 'error',
 				'data'   => [
-					'errorText' => 'Указан некорректный Email...',
+					'errorText' => 'Invalid Email specified...',
 				],
 			]);
 		}
@@ -63,7 +63,7 @@ class Index
 			return json_response([
 				'status' => 'error',
 				'data'   => [
-					'errorText' => 'Указано некорректное Имя...',
+					'errorText' => 'Invalid Name specified...',
 				],
 			]);
 		}
@@ -72,7 +72,7 @@ class Index
 			return json_response([
 				'status' => 'error',
 				'data'   => [
-					'errorText' => 'Проверьте правильность пароля...',
+					'errorText' => 'Check the password correctness...',
 				],
 			]);
 		}
@@ -84,7 +84,7 @@ class Index
 			return json_response([
 				'status' => 'error',
 				'data'   => [
-					'errorText' => 'Пользователь с таким Email адресом уже зарегистрирован',
+					'errorText' => 'A user with this Email address is already registered',
 				],
 			]);
 		}
@@ -109,18 +109,18 @@ class Index
 		return json_response([
 			'status' => 'error',
 			'data'   => [
-				'errorText' => 'Регистрация не удалась...',
+				'errorText' => 'Registration failed...',
 			],
 		]);
 	}
 	
 	/**
-	* Метод авторизации
+	* Authorization method
 	*/
 	public function login()
 	{
 		if( !input()->expectsJson() ) {
-			abort('Некорректный запрос...');
+			abort('Invalid request...');
 		}
 
 		if( auth()->check() ) {
@@ -136,7 +136,7 @@ class Index
 			return json_response([
 				'status' => 'error',
 				'data'   => [
-					'errorText' => 'Некорректные данные для обработки...',
+					'errorText' => 'Invalid data to process...',
 				],
 			]);
 		}
@@ -160,7 +160,7 @@ class Index
 		return json_response([
 			'status' => 'error',
 			'data'   => [
-				'errorText' => 'Логин или пароль указан не правильно...',
+				'errorText' => 'Login or password is incorrect...',
 			],
 		]);
 	}

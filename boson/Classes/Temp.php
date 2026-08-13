@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2017 All rights reserved
 * @version   2.1
 *
-* Работа с временными файлами. Поддерживает сериализацию любых типов,
-* опциональное шифрование и gzip-сжатие.
+* Working with temporary files. Supports serialization of any types,
+* optional encryption and gzip compression.
 */
 
   class TempException extends \Exception {}  
@@ -23,8 +23,8 @@
       /**
       * Constructor
       * 
-      * @param string $name    Имя файла
-      * @param string $directory Директория (по умолчанию TEMP_DIR)
+      * @param string $name    File name
+      * @param string $directory Directory (TEMP_DIR by default)
       */
       public function __construct( $name, $directory = null )
       {
@@ -42,7 +42,7 @@
       }
 
       /**
-       * Включить шифрование (RC4) при записи/чтении.
+       * Enable encryption (RC4) on write/read.
        */
       public function encryption()
       {
@@ -52,7 +52,7 @@
       }
       
       /**
-       * Сменить директорию.
+       * Change the directory.
        */
       public function path( $dir )
       {
@@ -64,7 +64,7 @@
       }
 
       /**
-       * Полный путь к файлу.
+       * Full path to the file.
        */
       public function filePath(): string
       {
@@ -72,7 +72,7 @@
       }
 
       /**
-       * Проверить существование файла.
+       * Check whether the file exists.
        */
       public function exists(): bool
       {
@@ -80,7 +80,7 @@
       }
 
       /**
-      * Установить содержимое. Принимает любой сериализуемый тип.
+      * Set the content. Accepts any serializable type.
       * 
       * @param mixed $content
       * @return Temp
@@ -93,7 +93,7 @@
       }
 
       /**
-      * Записать данные в файл (сериализация + gzip + опционально шифрование).
+      * Write data to the file (serialization + gzip + optional encryption).
       */
       public function write()
       {
@@ -110,7 +110,7 @@
       }
 
       /**
-      * Прочитать данные из файла (десериализация).
+      * Read data from the file (deserialization).
       */
       public function read()
       {
@@ -123,9 +123,9 @@
       }
 
       /**
-      * Удалить файл.
+      * Delete the file.
       *
-      * @return bool true если файл существовал и был удалён
+      * @return bool true if the file existed and was deleted
       */
       public function delete(): bool
       {
@@ -137,7 +137,7 @@
       }
       
       /**
-       * Создать и сразу записать.
+       * Create and write immediately.
        */
       public static function create($filename, $content)
       {
@@ -149,7 +149,7 @@
       }
       
       /**
-       * Прочитать и сразу удалить.
+       * Read and delete immediately.
        */
       public static function pull($filename)
       {

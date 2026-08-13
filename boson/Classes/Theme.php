@@ -5,48 +5,48 @@
 * @copyright Copyright (c) 2018 All rights reserved
 * @version   2.1
 *
-* Управление темами и рендерингом шаблонов.
-* Поддерживает горячую смену движка (Smarty / Native PHTML) и темы оформления.
+* Theme management and template rendering.
+* Supports hot-swapping the engine (Smarty / Native PHTML) and the design theme.
 */
             
 final class Theme
 {
     use \Boson\Traits\SingletonTrait;
 
-    /** @var array Список CSS файлов для инжекции */
+    /** @var array List of CSS files for injection */
     protected $_css_list;
 
-    /** @var array Список JS файлов для инжекции: ['head' => [...], 'body' => [...]] */
+    /** @var array List of JS files for injection: ['head' => [...], 'body' => [...]] */
     protected $_js_list;
 
-    /** @var string Имя текущей темы */
+    /** @var string Name of the current theme */
     protected $_theme_name;
 
-    /** @var string Имя модуля (не используется, задел на будущее) */
+    /** @var string Module name (unused, reserved for the future) */
     protected $_module_name;
 
-    /** @var string Имя файла макета */
+    /** @var string Layout file name */
     protected $_layout;
 
-    /** @var \Boson\Config|null Конфигурация */
+    /** @var \Boson\Config|null Configuration */
     protected $_config;
 
-    /** @var bool Флаг рендеринга макета */
+    /** @var bool Layout rendering flag */
     protected $render;
 
-    /** @var array HTTP-заголовки для отправки */
+    /** @var array HTTP headers to send */
     protected $_headers;
 
-    /** @var string Тип движка: 'smarty' или 'native' */
+    /** @var string Engine type: 'smarty' or 'native' */
     protected $_cover;
 
-    /** @var string Тип движка: 'smarty' или 'native' */
+    /** @var string Engine type: 'smarty' or 'native' */
     protected $_engine_type = 'native';
 
-    /** @var mixed Экземпляр движка шаблонов (Smarty или Native) */
+    /** @var mixed Template engine instance (Smarty or Native) */
     protected $engine;
 
-    /** @var bool Флаг: глобальные переменные уже установлены */
+    /** @var bool Flag: global variables are already set */
     protected $_globals_set = false;
 
 // -------------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Возвращает экземпляр движка шаблонов (для обратной совместимости).
+     * Returns the template engine instance (for backward compatibility).
      */
     public function layout()
     {
@@ -104,7 +104,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Возвращает экземпляр движка шаблонов (для обратной совместимости).
+     * Returns the template engine instance (for backward compatibility).
      */
     public function view()
     {
@@ -112,7 +112,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Возвращает тип текущего движка: 'smarty' или 'native'.
+     * Returns the current engine type: 'smarty' or 'native'.
      */
     public function engineType(): string
     {
@@ -120,9 +120,9 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Регистрирует плагин/функцию в движке шаблонов.
-     * Для Smarty: тип 'function', имя коллбэка.
-     * Для Native: сохраняется для вызова из шаблонов через function_exists.
+     * Registers a plugin/function in the template engine.
+     * For Smarty: type 'function', callback name.
+     * For Native: stored for calls from templates via function_exists.
      */
     public function addPlugin(string $type, string $name, callable $callback): self
     {
@@ -134,7 +134,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Добавляет HTTP-заголовок.
+     * Adds an HTTP header.
      *
      * @param string|array $header
      * @return Theme
@@ -220,10 +220,10 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Добавление внешнего JS скрипта.
+     * Add an external JS script.
      *
      * @param string $url
-     * @param bool $head — в <head> (true) или перед </body> (false)
+     * @param bool $head — in <head> (true) or before </body> (false)
      * @return Theme
      */
     public function useExternalJs($url, $head = true)
@@ -246,10 +246,10 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Добавление JS скрипта из темы.
+     * Add a JS script from the theme.
      *
      * @param string $js_filename
-     * @param bool $head — в <head> (true) или перед </body> (false)
+     * @param bool $head — in <head> (true) or before </body> (false)
      * @return Theme
      */
     public function useThemeJs($js_filename, $head = true)
@@ -270,7 +270,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Смена темы на лету. Обновляет пути шаблонов для текущего движка.
+     * Change the theme on the fly. Updates template paths for the current engine.
      */
     public function setTheme($theme_name): self
     {
@@ -317,7 +317,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Назначает переменную для шаблона (доступна и в виде, и в макете).
+     * Assigns a variable for the template (available both in the view and the layout).
      */
     public function assign($name, $value = ''): self
     {
@@ -327,7 +327,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Устанавливает глобальные переменные шаблона (base_url, js_url, css_url и т.д.).
+     * Sets the global template variables (base_url, js_url, css_url, etc.).
      */
     public function setGlobals(): self
     {
@@ -343,16 +343,16 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Главный метод рендеринга. Оборачивает контент в макет и выводит результат.
+     * Main rendering method. Wraps the content in a layout and outputs the result.
      */
     public function display( $content )
     {
-        // Глобальные переменные (если ещё не установлены)
+        // Global variables (if not yet set)
         if( !$this->_globals_set ) {
             $this->setGlobals();
         }
 
-        // Flash-сообщения (новый API session()->flash() + старый для совместимости)
+        // Flash messages (new session()->flash() API + old one for compatibility)
         foreach(['message', 'error'] as $key) {
             $flash = session()->flash($key);
             if( $flash !== null ) {
@@ -363,24 +363,24 @@ final class Theme
             }
         }
 
-        // Статус авторизации (для Smarty-шаблонов, где нет прямого доступа к is_auth())
+        // Authorization status (for Smarty templates without direct access to is_auth())
         if( function_exists('is_auth') ) {
             $this->engine->assign('is_auth', is_auth());
         }
 
-        // Отправка заголовков
+        // Sending headers
         if( !headers_sent() && array_count($this->_headers) > 0 ) {
             foreach($this->_headers as $val) {
                 header($val);
             }
         }
 
-        // Защитные заголовки (из конфига или значения по умолчанию)
+        // Security headers (from config or default values)
         if( !headers_sent() ) {
             $this->sendSecurityHeaders();
         }
 
-        // Без макета — просто выводим контент
+        // Without layout — just output the content
         if( !$this->render ) {
             http_cache_off();
             send_header_app_info();
@@ -390,18 +390,18 @@ final class Theme
             return;
         }
 
-        // CSS/JS как переменные шаблона (движок сам решит, где их вставить)
+        // CSS/JS as template variables (the engine decides where to insert them)
         $this->engine->assign('boson_css'    , $this->_css_list ?? []);
         $this->engine->assign('boson_js_head', $this->_js_list['head'] ?? []);
         $this->engine->assign('boson_js_body', $this->_js_list['body'] ?? []);
 
-        // Рендерим макет с контентом
+        // Render the layout with the content
         $this->engine->assign('content', $content);
         $out = $this->engine->fetch( $this->_layout );
 
         memory_clear();
 
-        // Динамическая вставка CSS (regex-фоллбек для шаблонов без {$boson_css})
+        // Dynamic CSS injection (regex fallback for templates without {$boson_css})
         if( array_count($this->_css_list) > 0 ) {
             $_ = "\n\t\t<!-- BOSON DYNAMIC CSS -->\n";
 
@@ -417,10 +417,10 @@ final class Theme
             $out = preg_replace('#\<\/head\>#is', $_ . "</head>\n", $out);
         }
 
-        // Динамическая вставка JS (regex-фоллбек для шаблонов без {$boson_js_head}/{$boson_js_body})
+        // Dynamic JS injection (regex fallback for templates without {$boson_js_head}/{$boson_js_body})
         if( array_count($this->_js_list) > 0 ) {
             foreach($this->_js_list as $pos => $items) {
-                // Позиции head/body соответствуют тегам </head> и </body>
+                // head/body positions correspond to the </head> and </body> tags
                 if( !in_array($pos, ['head', 'body'], true) ) {
                     continue;
                 }
@@ -448,7 +448,7 @@ final class Theme
     }
 // -------------------------------------------------------------------------------------
     /**
-     * Отправляет защитные HTTP-заголовки. Значения берутся из config.ini.
+     * Sends security HTTP headers. Values are taken from config.ini.
      */
     protected function sendSecurityHeaders(): void
     {

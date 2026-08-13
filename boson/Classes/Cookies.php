@@ -5,8 +5,8 @@
 * @copyright Copyright (c) 2018 All rights reserved
 * @version   2.1
 *
-* Работа с cookies. Поддерживает магический доступ,
-* настраиваемое время жизни, безопасные параметры по умолчанию.
+* Working with cookies. Supports magic access,
+* configurable lifetime, secure defaults.
 */
 
 use Boson\Traits\SingletonTrait;
@@ -17,8 +17,8 @@ class Cookies
 
     protected $_properties = [];
 
-    /** @var int Время жизни cookie по умолчанию (в минутах) */
-    protected $_defaultExpire = 10080; // 7 дней
+    /** @var int Default cookie lifetime (in minutes) */
+    protected $_defaultExpire = 10080; // 7 days
 
     public function __construct()
     {
@@ -32,7 +32,7 @@ class Cookies
     }
 
     /**
-     * Установить время жизни cookie по умолчанию (в минутах).
+     * Set the default cookie lifetime (in minutes).
      */
     public function setDefaultExpire(int $minutes): self
     {
@@ -41,7 +41,7 @@ class Cookies
     }
 
     /**
-     * Получить значение cookie.
+     * Get a cookie value.
      */
     public function get($name, $default = null)
     {
@@ -49,11 +49,11 @@ class Cookies
     }
 
     /**
-     * Установить cookie.
+     * Set a cookie.
      *
-     * @param string $name    Имя
-     * @param mixed  $value   Значение (null — удалить)
-     * @param int    $minutes Время жизни в минутах (0 = до закрытия браузера)
+     * @param string $name    Name
+     * @param mixed  $value   Value (null — delete)
+     * @param int    $minutes Lifetime in minutes (0 = until browser close)
      */
     public function set($name, $value, $minutes = null): self
     {
@@ -81,7 +81,7 @@ class Cookies
     }
 
     /**
-     * Удалить cookie.
+     * Delete a cookie.
      */
     public function forget($name): self
     {
@@ -99,7 +99,7 @@ class Cookies
     }
 
     /**
-     * Проверить существование cookie.
+     * Check whether a cookie exists.
      */
     public function has($name): bool
     {
@@ -107,7 +107,7 @@ class Cookies
     }
 
     /**
-     * Вернуть все cookie (кроме PHPSESSID).
+     * Return all cookies (except PHPSESSID).
      */
     public function all(): array
     {
@@ -115,7 +115,7 @@ class Cookies
     }
 
     /**
-     * Проверяет HTTPS (в том числе за reverse-proxy через X-Forwarded-Proto).
+     * Checks HTTPS (including behind a reverse proxy via X-Forwarded-Proto).
      */
     protected function isSecure(): bool
     {

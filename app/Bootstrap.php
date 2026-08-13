@@ -11,8 +11,8 @@ function is_auth()
 } 
 
 /**
- * Генерация CSRF токена.
- * Сохраняет токен в сессии и возвращает его.
+ * CSRF token generation.
+ * Saves the token in the session and returns it.
  *
  * @return string
  */
@@ -26,7 +26,7 @@ function csrf_token()
 }
 
 /**
- * Возвращает HTML-поле с CSRF токеном для вставки в формы.
+ * Returns an HTML field with a CSRF token for embedding in forms.
  *
  * @return string
  */
@@ -36,8 +36,8 @@ function csrf_field()
 }
 
 /**
- * Проверка CSRF токена из запроса.
- * Возвращает true если токен валиден.
+ * CSRF token verification from the request.
+ * Returns true if the token is valid.
  *
  * @return bool
  */

@@ -41,7 +41,7 @@ abstract class EloquentModel extends Model implements \JsonSerializable
      */
     public function scopeOrderByRandom(Builder $query): Builder
     {
-        // Для MySQL: RAND(), для PostgreSQL: RANDOM()
+        // For MySQL: RAND(), for PostgreSQL: RANDOM()
         $driver     = $query->getConnection()->getDriverName();
         $randomFunc = $driver === 'pgsql' ? 'RANDOM()' : 'RAND()';
         
@@ -49,7 +49,7 @@ abstract class EloquentModel extends Model implements \JsonSerializable
     }
 
     /**
-     * Where LIKE (безопасно)
+     * Where LIKE (safe)
      * @param Builder $query
      * @param string $fieldname
      * @param string $str
@@ -61,7 +61,7 @@ abstract class EloquentModel extends Model implements \JsonSerializable
     }
 
     /**
-     * Or Where LIKE (безопасно)
+     * Or Where LIKE (safe)
      * @param Builder $query
      * @param string $fieldname
      * @param string $str

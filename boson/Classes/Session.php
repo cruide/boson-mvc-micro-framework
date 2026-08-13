@@ -6,8 +6,8 @@
 * @copyright Copyright (c) 2018 All rights reserved
 * @version   2.1
 *
-* Работа с сессиями. Поддерживает магический доступ к свойствам,
-* flash-сообщения, регенерацию ID.
+* Working with sessions. Supports magic property access,
+* flash messages, ID regeneration.
 */
 
 use Boson\Traits\SingletonTrait;
@@ -47,7 +47,7 @@ class Session
     }
 
     /**
-     * Получить значение из сессии.
+     * Get a value from the session.
      */
     public function get($key, $default = null)
     {
@@ -55,7 +55,7 @@ class Session
     }
 
     /**
-     * Записать значение в сессию.
+     * Write a value to the session.
      */
     public function set($key, $value): self
     {
@@ -64,7 +64,7 @@ class Session
     }
 
     /**
-     * Проверить существование ключа (в том числе со значением null).
+     * Check whether a key exists (including with a null value).
      */
     public function has($key): bool
     {
@@ -72,7 +72,7 @@ class Session
     }
 
     /**
-     * Удалить ключ из сессии.
+     * Remove a key from the session.
      */
     public function remove($key): self
     {
@@ -81,11 +81,11 @@ class Session
     }
 
     /**
-     * Flash-сообщение: значение доступно только при следующем запросе, затем удаляется.
+     * Flash message: the value is only available on the next request, then it is removed.
      *
-     * @param string $key   Ключ
-     * @param mixed  $value Если null — удалить
-     * @return mixed|null   Текущее значение (при чтении)
+     * @param string $key   Key
+     * @param mixed  $value If null — delete
+     * @return mixed|null   Current value (when reading)
      */
     public function flash($key, $value = null)
     {
@@ -94,7 +94,7 @@ class Session
         if( $value === null ) {
             $val = $_SESSION[ $flashKey ] ?? null;
 
-            // Если это ещё не удалённый флеш (первое чтение в этом запросе)
+            // If this is not yet a removed flash (first read in this request)
             if( ($_SESSION[ '_flash_consumed_' . $key ] ?? null) !== true ) {
                 unset($_SESSION[ $flashKey ]);
                 $_SESSION[ '_flash_consumed_' . $key ] = true;
@@ -110,7 +110,7 @@ class Session
     }
 
     /**
-     * Вернуть все данные сессии.
+     * Return all session data.
      */
     public function all(): array
     {
@@ -127,7 +127,7 @@ class Session
     }
 
     /**
-     * Полностью очистить сессию.
+     * Completely clear the session.
      */
     public function clear(): self
     {

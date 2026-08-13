@@ -12,7 +12,7 @@ class Users
     }
 
     /**
-    * Просотр всех пользователей
+    * View all users
     * GET /users
     */
     public function index()
@@ -34,7 +34,7 @@ class Users
     }
     
     /**
-    * Просмотр данных кнкректного пользователя по его идентификатору
+    * View data of a specific user by their identifier
     * GET /users/{id}
     * 
     * @param mixed $user_id
@@ -42,14 +42,14 @@ class Users
     public function show($user_id = null)
     {
         if( empty($user_id) || !is_numeric($user_id) || !($user = User::find($user_id)) ) {
-            abort_json("Пользователь с идентификатором {$user_id} не найден", 404);
+            abort_json("User with identifier {$user_id} not found", 404);
         }
         
         return json_response($user);
     }
     
     /**
-    * Создание пользователя
+    * Create user
     * POST /users
     *
     * @param mixed $user_id
@@ -58,7 +58,7 @@ class Users
     {
         $input = input()->all();
 
-        // Валидация входных данных
+        // Validate input data
         $validator = validator($input, [
             'name'        => 'required|minlen:5|maxlen:254',
             'email'       => 'required|email|maxlen:255',
@@ -73,7 +73,7 @@ class Users
         if( $validator->fails() ) {
             return abort_json([
                 'status'  => false,
-                'message' => 'Ошибка валидации данных',
+                'message' => 'Data validation error',
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -81,17 +81,17 @@ class Users
         $validated = $validator->validated();
 
         try {
-            // Открываем транзакцию
+            // Begin transaction
             db()->beginTransaction();
 
-            // Создаём пользователя
+            // Create user
             $user = User::create([
                 'name'     => $validated['name'],
                 'email'    => $validated['email'],
                 'password' => password_crypt($validated['password']),
             ]);
 
-            // Собираем данные профиля (только переданные поля)
+            // Collect profile data (only passed fields)
             $profileData   = ['user_id' => $user->id];
             $profileFields = ['first_name', 'middle_name', 'last_name', 'gender', 'birthday'];
 
@@ -101,7 +101,7 @@ class Users
                 }
             }
 
-            // Создаём профиль
+            // Create profile
             $user->profile()->create($profileData);
 
             db()->commit();
@@ -111,18 +111,18 @@ class Users
 
             return abort_json([
                 'status'  => false,
-                'message' => 'Ошибка при создании пользователя: ' . $e->getMessage(),
+                'message' => 'Error creating user: ' . $e->getMessage(),
             ], 500);
         }
 
-        // Загружаем профиль и возвращаем результат
+        // Load the profile and return the result
         $user->load('profile');
 
         return json_response($user);
     }
     
     /**
-    * Обновление данных пользователя
+    * Update user data
     * PUT /users/{id}
     *
     * @param mixed $user_id
@@ -130,13 +130,13 @@ class Users
     public function update($user_id = null)
     {
         if( empty($user_id) || !is_numeric($user_id) || !($user = User::find($user_id)) ) {
-            abort_json("Пользователь с идентификатором {$user_id} не найден", 404);
+            abort_json("User with identifier {$user_id} not found", 404);
         }
 
         $input         = input()->all();
         $profileFields = ['first_name', 'middle_name', 'last_name', 'gender', 'birthday'];
 
-        // Отбираем только поля профиля из входных данных
+        // Pick only profile fields from the input data
         $profileInput  = [];
         
         foreach( $profileFields as $field ) {
@@ -145,14 +145,14 @@ class Users
             }
         }
 
-        // Если нет ни одного поля для обновления — возвращаем пользователя без изменений
+        // If there are no fields to update — return the user unchanged
         if( empty($profileInput) ) {
             $user->load('profile');
 
             return json_response($user);
         }
 
-        // Валидация переданных полей
+        // Validate the passed fields
         $rules = [
             'first_name'  => 'minlen:1|maxlen:254',
             'middle_name' => 'minlen:1|maxlen:254',
@@ -161,7 +161,7 @@ class Users
             'birthday'    => 'date',
         ];
 
-        // Оставляем только правила для переданных полей
+        // Keep only the rules for the passed fields
         $rules = array_intersect_key($rules, $profileInput);
 
         $validator = validator($profileInput, $rules);
@@ -169,27 +169,27 @@ class Users
         if( $validator->fails() ) {
             return abort_json([
                 'status'  => false,
-                'message' => 'Ошибка валидации данных',
+                'message' => 'Data validation error',
                 'errors'  => $validator->errors(),
             ], 422);
         }
 
         $validated = $validator->validated();
 
-        // Обновляем профиль пользователя
+        // Update the user profile
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             $validated
         );
 
-        // Загружаем профиль и возвращаем результат
+        // Load the profile and return the result
         $user->load('profile');
 
         return json_response($user);
     }
 
     /**
-    * Удаления пользователя
+    * Delete user
     * DELETE /users/{id}
     *
     * @param mixed $user_id
@@ -197,15 +197,15 @@ class Users
     public function remove($user_id = null)
     {
         if( empty($user_id) || !is_numeric($user_id) || !($user = User::find($user_id)) ) {
-            abort_json("Пользователь с идентификатором {$user_id} не найден", 404);
+            abort_json("User with identifier {$user_id} not found", 404);
         }
 
-        // Удаляем пользователя
+        // Delete user
         $user->delete();
 
         return json_response([
             'status'  => true,
-            'message' => "Пользователь с идентификатором {$user_id} успешно удалён",
+            'message' => "User with identifier {$user_id} successfully deleted",
         ]);
     }
 }

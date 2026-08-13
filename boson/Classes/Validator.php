@@ -5,17 +5,17 @@
  * @copyright Copyright © 2025
  * @version   2.1
  *
- * Универсальный валидатор входных данных.
+ * Universal input data validator.
  *
- * Поддерживает:
- * - строковые правила, например: `required|trim|email|maxlen:100`
- * - массивы правил
- * - кастомные `Closure`-валидаторы
- * - регистрацию собственных правил через addRule()
- * - множественные сообщения об ошибках для каждого поля
- * - локализацию ошибок через функцию `i18n()`, если она определена
+ * Supports:
+ * - string rules, e.g.: `required|trim|email|maxlen:100`
+ * - rule arrays
+ * - custom `Closure` validators
+ * - registering custom rules via addRule()
+ * - multiple error messages per field
+ * - error localization via the `i18n()` function, if defined
  *
- * Пример использования:
+ * Usage example:
  *
  * ```php
  * $validator = validator($values, [
@@ -30,9 +30,9 @@
  * $data = $validator->validated();
  * ```
  *
- * Поддерживаемые строковые правила:
+ * Supported string rules:
  * - `required`, `nullable`, `trim`
- * - `int`, `integer` (синоним), `float`, `bool`, `boolean` (синоним), `numeric`
+ * - `int`, `integer` (synonym), `float`, `bool`, `boolean` (synonym), `numeric`
  * - `email`, `url`, `json`
  * - `alpha`, `alphanum`
  * - `date`, `date:Y-m-d`
@@ -40,17 +40,17 @@
  * - `in:a,b,c`, `not_in:x,y,z`
  * - `same:field`, `confirmed`
  * - `regexp:/.../`
- * - `validator:name` — вызывает `is_name($value)`
+ * - `validator:name` — calls `is_name($value)`
  *
- * Формат ошибок:
+ * Error format:
  *
  * ```php
  * [
  *     'email' => [
- *         'Некорректный email'
+ *         'Invalid email'
  *     ],
  *     'password' => [
- *         'Минимальная длина — 6 символов'
+ *         'Minimum length is 6 characters'
  *     ]
  * ]
  * ```
@@ -58,49 +58,49 @@
 class Validator
 {
     /**
-     * Входные значения для валидации.
+     * Input values to validate.
      *
      * @var array<string, mixed>
      */
     protected array $values = [];
 
     /**
-     * Нормализованные правила валидации.
+     * Normalized validation rules.
      *
      * @var array<string, array<string, mixed>|Closure>
      */
     protected array $rules = [];
 
     /**
-     * Ошибки валидации.
+     * Validation errors.
      *
      * @var array<string, array<int, string>>
      */
     protected array $messages = [];
 
     /**
-     * Останавливать ли проверку поля после первой ошибки.
+     * Whether to stop checking a field after the first error.
      *
      * @var bool
      */
     protected bool $stopOnFirstError = true;
 
     /**
-     * Пользовательские сообщения об ошибках.
+     * Custom error messages.
      *
      * @var array<string, string|array>
      */
     protected array $customMessages = [];
 
     /**
-     * Зарегистрированные кастомные правила.
+     * Registered custom rules.
      *
      * @var array<string, Closure>
      */
     protected array $customRules = [];
 
     /**
-     * Карта типов ошибок к ключам локализации.
+     * Map of error types to localization keys.
      *
      * @var array<string, string>
      */
@@ -132,9 +132,9 @@ class Validator
     /**
      * Validator constructor.
      *
-     * @param array<string, mixed> $values Входные данные для проверки
-     * @param array<string, mixed> $rules  Набор правил валидации
-     * @param bool $stopOnFirstError       Если `true`, проверка каждого поля останавливается на первой ошибке
+     * @param array<string, mixed> $values Input data to validate
+     * @param array<string, mixed> $rules  Validation rule set
+     * @param bool $stopOnFirstError       If `true`, checking of each field stops at the first error
      */
     public function __construct(array $values = [], array $rules = [], bool $stopOnFirstError = true)
     {
@@ -147,7 +147,7 @@ class Validator
     }
 
     /**
-     * Статический фабричный метод.
+     * Static factory method.
      *
      * @param array<string, mixed> $values
      * @param array<string, mixed> $rules
@@ -159,7 +159,7 @@ class Validator
     }
 
     /**
-     * Заменяет входные данные для проверки.
+     * Replaces the input data to validate.
      */
     public function setValues(array $values): self
     {
@@ -168,7 +168,7 @@ class Validator
     }
 
     /**
-     * Заменяет набор правил валидации.
+     * Replaces the validation rule set.
      */
     public function setRules(array $rules): self
     {
@@ -182,13 +182,13 @@ class Validator
     }
 
     /**
-     * Устанавливает пользовательские сообщения об ошибках.
+     * Sets custom error messages.
      *
-     * Формат:
+     * Format:
      * ```php
      * $validator->setMessages([
-     *     'email.required' => 'Укажите email',
-     *     'email.email'    => 'Некорректный email',
+     *     'email.required' => 'Enter email',
+     *     'email.email'    => 'Invalid email',
      * ]);
      * ```
      */
@@ -199,13 +199,13 @@ class Validator
     }
 
     /**
-     * Регистрирует кастомное правило валидации.
+     * Registers a custom validation rule.
      *
-     * Сигнатура callback:
+     * Callback signature:
      * `function(mixed $value, array $params, array $allValues): bool|string`
      *
-     * @param string $name Имя правила
-     * @param Closure $callback Функция проверки
+     * @param string $name Rule name
+     * @param Closure $callback Check function
      * @return $this
      */
     public function addRule(string $name, Closure $callback): self
@@ -215,7 +215,7 @@ class Validator
     }
 
     /**
-     * Возвращает `true`, если ошибок нет.
+     * Returns `true` if there are no errors.
      */
     public function passes(): bool
     {
@@ -223,7 +223,7 @@ class Validator
     }
 
     /**
-     * Возвращает `true`, если есть хотя бы одна ошибка.
+     * Returns `true` if there is at least one error.
      */
     public function fails(): bool
     {
@@ -231,7 +231,7 @@ class Validator
     }
 
     /**
-     * Выполняет полную валидацию всех полей.
+     * Performs full validation of all fields.
      */
     public function checkAll(): bool
     {
@@ -248,7 +248,7 @@ class Validator
     }
 
     /**
-     * Проверяет только одно поле.
+     * Checks only one field.
      */
     public function check(string $field): bool
     {
@@ -262,7 +262,7 @@ class Validator
     }
 
     /**
-     * Все сообщения об ошибках.
+     * All error messages.
      *
      * @return array<string, array<int, string>>
      */
@@ -272,7 +272,7 @@ class Validator
     }
 
     /**
-     * Алиас getMessages().
+     * Alias for getMessages().
      *
      * @return array<string, array<int, string>>
      */
@@ -282,7 +282,7 @@ class Validator
     }
 
     /**
-     * Короткий алиас для getMessages().
+     * Short alias for getMessages().
      *
      * @return array<string, array<int, string>>
      */
@@ -292,9 +292,9 @@ class Validator
     }
 
     /**
-     * Возвращает первое сообщение об ошибке.
+     * Returns the first error message.
      *
-     * @param string|null $field Если указано — первая ошибка поля, иначе первая ошибка вообще.
+     * @param string|null $field If specified — the first error of the field, otherwise the first error overall.
      * @return string|null
      */
     public function first($field = null): ?string
@@ -313,7 +313,7 @@ class Validator
     }
 
     /**
-     * Возвращает первое сообщение об ошибке для указанного поля.
+     * Returns the first error message for the specified field.
      */
     public function getFirstMessage(string $field): ?string
     {
@@ -321,7 +321,7 @@ class Validator
     }
 
     /**
-     * Проверяет, есть ли ошибки у указанного поля.
+     * Checks whether the specified field has errors.
      */
     public function hasError(string $field): bool
     {
@@ -329,7 +329,7 @@ class Validator
     }
 
     /**
-     * Возвращает список полей, не прошедших валидацию.
+     * Returns the list of fields that failed validation.
      *
      * @return array<int, string>
      */
@@ -339,7 +339,7 @@ class Validator
     }
 
     /**
-     * Возвращает только валидированные данные (поля, для которых есть правила).
+     * Returns only validated data (fields that have rules).
      *
      * @return array<string, mixed>
      */
@@ -357,7 +357,7 @@ class Validator
     }
 
     /**
-     * Возвращает часть валидированных данных по указанным ключам.
+     * Returns a part of the validated data by the specified keys.
      *
      * @param array<int, string> $keys
      * @return array<string, mixed>
@@ -377,7 +377,7 @@ class Validator
     }
 
     /**
-     * Возвращает валидированные данные или выбрасывает исключение при ошибках.
+     * Returns validated data or throws an exception on errors.
      *
      * @throws \RuntimeException
      * @return array<string, mixed>
@@ -385,7 +385,7 @@ class Validator
     public function validateOrFail(): array
     {
         if ($this->fails()) {
-            $msg = $this->first() ?: 'Ошибка валидации';
+            $msg = $this->first() ?: 'Validation error';
             throw new \RuntimeException($msg);
         }
 
@@ -393,11 +393,11 @@ class Validator
     }
 
     // ---------------------------------------------------------------------
-    //  Внутренняя логика валидации
+    //  Internal validation logic
     // ---------------------------------------------------------------------
 
     /**
-     * Выполняет валидацию одного поля.
+     * Performs validation of a single field.
      */
     protected function validateField(string $field, $ruleSet): bool
     {
@@ -476,7 +476,7 @@ class Validator
     }
 
     /**
-     * Выполняет кастомную проверку через `Closure`.
+     * Performs a custom check via `Closure`.
      */
     protected function validateClosure(string $field, $value, Closure $closure): bool
     {
@@ -501,11 +501,11 @@ class Validator
     }
 
     /**
-     * Применяет одно правило к значению поля.
+     * Applies a single rule to a field value.
      */
     protected function applyRule(string $field, $value, string $rule, $ruleValue, array $allRules): bool
     {
-        // Кастомные правила пользователя
+        // User's custom rules
         if (isset($this->customRules[$rule])) {
             $result = $this->customRules[$rule]($value, (array)$ruleValue, $this->values);
 
@@ -723,11 +723,11 @@ class Validator
     }
 
     // ---------------------------------------------------------------------
-    //  Сообщения
+    //  Messages
     // ---------------------------------------------------------------------
 
     /**
-     * Добавляет сообщение об ошибке для поля.
+     * Adds an error message for a field.
      */
     protected function addError(string $field, string $message): void
     {
@@ -736,7 +736,7 @@ class Validator
     }
 
     /**
-     * Удаляет все ошибки указанного поля.
+     * Removes all errors of the specified field.
      */
     protected function clearFieldMessages(string $field): void
     {
@@ -744,34 +744,34 @@ class Validator
     }
 
     /**
-     * Возвращает текст сообщения об ошибке для указанного типа правила.
+     * Returns the error message text for the specified rule type.
      *
-     * Приоритет источников:
+     * Source priority:
      * 1. `$this->customMessages['field.rule']`
      * 2. `$rule['messages'][$type]`
      * 3. `$rule['message']`
      * 4. `i18n($key, $params)`
-     * 5. Ключ локализации как fallback
+     * 5. Localization key as fallback
      */
     protected function getErrorMessage(string $field, string $type, array $rule, array $params = []): string
     {
-        // 1. Пользовательские сообщения через setMessages()
+        // 1. Custom messages via setMessages()
         $dotKey = $field . '.' . $type;
         if (!empty($this->customMessages[$dotKey])) {
             return Str::ucfirst((string)$this->customMessages[$dotKey]);
         }
 
-        // 2. messages[type] внутри правил поля
+        // 2. messages[type] inside the field rules
         if (!empty($rule['messages'][$type])) {
             return Str::ucfirst((string)$rule['messages'][$type]);
         }
 
-        // 3. message внутри правил поля
+        // 3. message inside the field rules
         if (!empty($rule['message']) && is_string($rule['message'])) {
             return Str::ucfirst($rule['message']);
         }
 
-        // 4. i18n / ключ локализации
+        // 4. i18n / localization key
         $key = $this->errorKeys[$type] ?? 'validator_invalid';
 
         if (function_exists('i18n')) {
@@ -782,11 +782,11 @@ class Validator
     }
 
     // ---------------------------------------------------------------------
-    //  Нормализация правил
+    //  Rule normalization
     // ---------------------------------------------------------------------
 
     /**
-     * Нормализует правила в единый формат.
+     * Normalizes rules into a unified format.
      */
     protected function normalizeRules($rules)
     {
@@ -806,11 +806,11 @@ class Validator
     }
 
     /**
-     * Разбирает строку правил в массив.
+     * Parses a rule string into an array.
      *
-     * Пример: `required|trim|email|maxlen:100`
+     * Example: `required|trim|email|maxlen:100`
      *
-     * преобразуется в:
+     * is transformed into:
      *
      * ```php
      * [
@@ -836,13 +836,13 @@ class Validator
             $raw  = trim($part);
             $key  = strtolower($raw);
 
-            // Правила без параметров
+            // Rules without parameters
             if (in_array($key, ['required', 'nullable', 'trim'], true)) {
                 $result[$key] = true;
                 continue;
             }
 
-            // Типы и форматы без параметров
+            // Types and formats without parameters
             if (in_array($key, ['email', 'url', 'int', 'integer', 'float', 'bool', 'boolean', 'numeric', 'json', 'alpha', 'alphanum'], true)) {
                 if ($key === 'integer') {
                     $result['int'] = true;
@@ -854,7 +854,7 @@ class Validator
                 continue;
             }
 
-            // date (опционально с форматом)
+            // date (optionally with a format)
             if ($key === 'date' || strpos($key, 'date:') === 0) {
                 if (strpos($raw, ':') !== false) {
                     $result['date'] = substr($raw, 5);
@@ -876,13 +876,13 @@ class Validator
                 continue;
             }
 
-            // message:Текст
+            // message:Text
             if (strpos($key, 'message:') === 0) {
                 $result['message'] = substr($raw, 8);
                 continue;
             }
 
-            // Правила с параметрами (ключ:значение)
+            // Rules with parameters (key:value)
             if (strpos($key, ':') !== false) {
                 [$k, $v] = explode(':', $raw, 2);
                 $k = strtolower(trim($k));
@@ -921,13 +921,13 @@ class Validator
                 continue;
             }
 
-            // Неизвестное правило — пробуем как валидатор is_*
+            // Unknown rule — try as an is_* validator
             if (function_exists('is_' . $key)) {
                 $result['validator'] = $key;
                 continue;
             }
 
-            // Кастомное зарегистрированное правило
+            // Custom registered rule
             if (isset($this->customRules[$key])) {
                 $result[$key] = true;
                 continue;

@@ -6,7 +6,7 @@
 * @copyright Copyright (c) 2025 All rights reserved
 * @version   2.1
 *
-* Обёртка над PHPMailer с поддержкой шаблонов (Smarty/Native).
+* Wrapper over PHPMailer with template support (Smarty/Native).
 */
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -344,7 +344,7 @@ class Mailer
     }
 
     /**
-     * Clear all recipients and attachments (для повторного использования)
+     * Clear all recipients and attachments (for reuse)
      */
     public function clear(): self
     {
@@ -355,7 +355,7 @@ class Mailer
     }
 
     /**
-     * Полный сброс — очищает всё, включая тему и отправителя
+     * Full reset — clears everything, including subject and sender
      */
     public function reset(): self
     {
@@ -366,7 +366,7 @@ class Mailer
         $this->phpmail->Body    = '';
         $this->phpmail->AltBody = '';
         
-        // Переприменяем from из конфига
+        // Re-apply the from from the config
         $this->configureMailer();
         
         return $this;

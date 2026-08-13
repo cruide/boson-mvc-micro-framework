@@ -1,26 +1,26 @@
 <?php namespace Boson;
 /**
- * I18n – система интернационализации микрофреймворка Boson.
+ * I18n — internationalization system of the Boson micro-framework.
  *
- * Данный класс адаптирован под PHP 8.0 без включения строгой типизации
- * (`declare(strict_types=1)` не используется). Типы указаны в сигнатурах
- * и свойствах как рекомендация, но их отсутствие не приводит к ошибкам.
+ * This class is adapted for PHP 8.0 without strict typing
+ * (`declare(strict_types=1)` is not used). Types are specified in signatures
+ * and properties as a recommendation, but their absence does not lead to errors.
  *
- * Основные улучшения по сравнению с оригиналом:
- *  1. Подробные PHPDoc‑комментарии для всех публичных и приватных методов.
- *  2. Кеширование уже загруженных языковых файлов в свойстве `$loaded`,
- *     чтобы избежать повторных `include`.
- *  3. Более эффективная подстановка плейсхолдеров через `strtr`.
- *  4. Fallback к строкам из языка‑по‑умолчанию, если ключ отсутствует в текущем.
- *  5. Читаемый код с ранними возвратами и минимумом вложенности.
+ * Main improvements over the original:
+ *  1. Detailed PHPDoc comments for all public and private methods.
+ *  2. Caching of already loaded language files in the `$loaded` property,
+ *     to avoid repeated `include` calls.
+ *  3. More efficient placeholder substitution via `strtr`.
+ *  4. Fallback to default-language strings if a key is missing in the current one.
+ *  5. Readable code with early returns and minimal nesting.
  *
- * Пример использования:
+ * Usage example:
  *
  * ```php
- * // Получаем единственный экземпляр
+ * // Get the single instance
  * $i18n = I18n::getInstance();
  *
- * // Выводим строку с подстановкой
+ * // Output a string with substitution
  * echo $i18n->get('greeting', ['name' => 'Иван']);
  * ```
  *
@@ -33,28 +33,28 @@
 use Boson\BosonObject;
 
 /**
- * Финальный класс, отвечающий за загрузку и выдачу переводов.
+ * Final class responsible for loading and returning translations.
  *
- * Класс реализует паттерн «Одиночка» с помощью трейта
- * `Boson\Traits\SingletonTrait`.
+ * The class implements the Singleton pattern using the
+ * `Boson\Traits\SingletonTrait` trait.
  */
 final class I18n
 {
-    /** @use SingletonTrait обеспечивает один глобальный экземпляр класса */
+    /** @use SingletonTrait provides a single global instance of the class */
     use \Boson\Traits\SingletonTrait;
 
     /**
-     * Хранилище всех строк текущего (и, при необходимости, базового) языка.
+     * Storage of all strings of the current (and, if necessary, base) language.
      *
      * @var BosonObject
      */
     private BosonObject $strings;
 
     /**
-     * Список поддерживаемых языков.
+     * List of supported languages.
      *
-     * Ключ – код языка (двухбуквенный, в нижнем регистре),
-     * значение – человекочитаемое название.
+     * Key is the language code (two-letter, lowercase),
+     * value is the human-readable name.
      *
      * @var array<string,string>
      */
@@ -68,43 +68,43 @@ final class I18n
     ];
 
     /**
-     * Язык по умолчанию. Файл `en.php` в каталоге `LANG_DIR` будет загружен
-     * в качестве базового набора строк.
+     * Default language. The `en.php` file in the `LANG_DIR` directory will be loaded
+     * as the base set of strings.
      *
      * @var string
      */
     private string $default = 'en';
 
     /**
-     * Текущий язык, выбранный пользователем (cookie) или конфигурацией.
+     * Current language, selected by the user (cookie) or by configuration.
      *
      * @var string
      */
     private string $current = 'en';
 
     /**
-     * Флаги уже загруженных файлов языков.
+     * Flags of already loaded language files.
      *
-     * Ключ – код языка, значение – `true`, если файл уже был включён.
+     * Key is the language code, value is `true` if the file has already been included.
      *
      * @var array<string,bool>
      */
     private array $loaded = [];
 
     /**
-     * Конструктор.
+     * Constructor.
      *
-     * Инициализирует список доступных языков, определяет текущий язык
-     * (по cookie → конфиг → язык по умолчанию) и загружает необходимые файлы.
+     * Initializes the list of available languages, determines the current language
+     * (via cookie → config → default language) and loads the required files.
      */
     public function __construct()
     {
-        // Оставляем только те языки, для которых реально существуют файлы.
+        // Keep only the languages that actually have files.
         $this->filterAvailableLanguages();
 
-        // Пытаемся взять язык из cookie.
+        // Try to get the language from the cookie.
         $cookieLang = cookies()->lang ?? null;
-        // Если в конфиге указано предпочтительное значение.
+        // If a preferred value is specified in the config.
         $configLang = cfg('config', 'lang');
 
         if ($cookieLang && array_key_exists($cookieLang, $this->languages)) {
@@ -113,7 +113,7 @@ final class I18n
             $this->current = $configLang;
         }
 
-        // Если список поддерживаемых языков пуст, просто создаём пустой объект.
+        // If the list of supported languages is empty, just create an empty object.
         if (empty($this->languages)) {
             $this->strings = new BosonObject();
             return;
@@ -121,7 +121,7 @@ final class I18n
 
         $this->strings = new BosonObject();
 
-        // Загружаем базовый язык и, при необходимости, текущий язык.
+        // Load the base language and, if necessary, the current language.
         $this->loadLanguageFile($this->default);
         if ($this->current !== $this->default) {
             $this->loadLanguageFile($this->current);
@@ -129,11 +129,11 @@ final class I18n
     }
 
     /**
-     * Оставляет в `$this->languages` только те языки, для которых
-     * действительно существует файл в каталоге `LANG_DIR`.
+     * Keeps in `$this->languages` only the languages for which
+     * a file actually exists in the `LANG_DIR` directory.
      *
-     * Файлы ожидаются в виде `LANG_DIR/<code>.php` и должны возвращать массив
-     * переводов.
+     * Files are expected to be named `LANG_DIR/<code>.php` and must return an array
+     * of translations.
      *
      * @return void
      */
@@ -148,24 +148,24 @@ final class I18n
     }
 
     /**
-     * Загружает файл переводов указанного языка и добавляет строки в объект
-     * `$this->strings`. Файл загружается только один раз в течение жизни
-     * экземпляра.
+     * Loads the translation file of the specified language and adds the strings to
+     * the `$this->strings` object. The file is loaded only once during the lifetime
+     * of the instance.
      *
-     * @param string $lang Код языка (например, `en`, `ru`).
+     * @param string $lang Language code (e.g. `en`, `ru`).
      *
      * @return void
      */
     private function loadLanguageFile(string $lang): void
     {
-        // Если файл уже был загружен – выходим.
+        // If the file has already been loaded, exit.
         if (!empty($this->loaded[$lang])) {
             return;
         }
 
         $langFile = LANG_DIR . DIR_SEP . $lang . '.php';
         if (!is_file($langFile)) {
-            // Файла нет – всё равно помечаем как загруженный, чтобы не пытаться снова.
+            // The file does not exist — still mark it as loaded to avoid retrying.
             $this->loaded[$lang] = true;
             return;
         }
@@ -175,8 +175,8 @@ final class I18n
         if (is_array($strings) && $strings !== []) {
             foreach ($strings as $key => $value) {
                 if ($this->isVariableName($key) && is_scalar($value)) {
-                    // При конфликте (один и тот же ключ в нескольких файлах)
-                    // последняя загрузка переопределит предыдущее значение.
+                    // On conflict (the same key in several files),
+                    // the last load will override the previous value.
                     $this->strings->set($key, $value);
                 }
             }
@@ -186,14 +186,14 @@ final class I18n
     }
 
     /**
-     * Проверка, может ли строка быть валидным именем переменной.
+     * Checks whether a string can be a valid variable name.
      *
-     * Правило: первая буква или подчёркивание, далее любые буквы, цифры,
-     * подчёркивания.
+     * Rule: first letter or underscore, then any letters, digits,
+     * underscores.
      *
-     * @param string $name Проверяемое имя.
+     * @param string $name Name to check.
      *
-     * @return bool `true`, если имя соответствует паттерну.
+     * @return bool `true` if the name matches the pattern.
      */
     private function isVariableName(string $name): bool
     {
@@ -201,9 +201,9 @@ final class I18n
     }
 
     /**
-     * Возвращает код языка‑по‑умолчанию.
+     * Returns the default language code.
      *
-     * @return string Код языка (по умолчанию `en`).
+     * @return string Language code (`en` by default).
      */
     public function getDefaultLang(): string
     {
@@ -211,9 +211,9 @@ final class I18n
     }
 
     /**
-     * Возвращает текущий активный язык.
+     * Returns the current active language.
      *
-     * @return string Текущий язык (например, `ru`).
+     * @return string Current language (e.g. `ru`).
      */
     public function getCurrentLang(): string
     {
@@ -221,14 +221,14 @@ final class I18n
     }
 
     /**
-     * Устанавливает текущий язык.
+     * Sets the current language.
      *
-     * При успешном изменении сохраняет выбранный язык в cookie `lang`
-     * и загружает его строки (если они ещё не были загружены).
+     * On successful change, stores the selected language in the `lang` cookie
+     * and loads its strings (if they have not been loaded yet).
      *
-     * @param string $langId Код языка (регистр не важен).
+     * @param string $langId Language code (case-insensitive).
      *
-     * @return $this Текущий объект для цепочечного вызова.
+     * @return $this Current object for chained calls.
      */
     public function setCurrentLang(string $langId): self
     {
@@ -243,9 +243,9 @@ final class I18n
     }
 
     /**
-     * Возвращает массив поддерживаемых языков.
+     * Returns the array of supported languages.
      *
-     * @return array<string,string> Ключи – коды, значения – названия.
+     * @return array<string,string> Keys are codes, values are names.
      */
     public function getLanguages(): array
     {
@@ -253,11 +253,11 @@ final class I18n
     }
 
     /**
-     * Проверяет наличие строки по ключу в текущем наборе переводов.
+     * Checks whether a string with the given key exists in the current set of translations.
      *
-     * @param string $key Ключ строки.
+     * @param string $key String key.
      *
-     * @return bool `true`, если строка существует.
+     * @return bool `true` if the string exists.
      */
     public function has(string $key): bool
     {
@@ -265,38 +265,38 @@ final class I18n
     }
 
     /**
-     * Получает строку перевода по ключу.
+     * Returns the translated string by key.
      *
-     * Если строка не найдена в текущем языке, проверяется наличие в базовом
-     * языке (по умолчанию). Если и там её нет — возвращается маркер
-     * `::key::`.
+     * If the string is not found in the current language, the base language
+     * (default) is checked. If it is not there either, the marker
+     * `::key::` is returned.
      *
-     * Плейсхолдеры вида `:name` заменяются значениями из массива `$values`.
+     * Placeholders like `:name` are replaced with values from the `$values` array.
      *
-     * @param string $key    Ключ строки.
-     * @param array  $values Ассоциативный массив замен (key => value).
+     * @param string $key    String key.
+     * @param array  $values Associative array of replacements (key => value).
      *
-     * @return string Переведённая строка или маркер отсутствия.
+     * @return string Translated string or the missing marker.
      */
     public function get(string $key, array $values = []): string
     {
-        // Попытка получить строку из текущего набора.
+        // Try to get the string from the current set.
         if ($this->has($key)) {
             $str = $this->strings->get($key);
         } else {
-            // Если текущий язык не содержит строку – пробуем базовый язык.
+            // If the current language does not contain the string, try the base language.
             if (!isset($this->loaded[$this->default])) {
                 $this->loadLanguageFile($this->default);
             }
             $str = $this->has($key) ? $this->strings->get($key) : null;
         }
 
-        // Если ничего не найдено – возвращаем маркер.
+        // If nothing is found, return the marker.
         if ($str === null) {
             return '::' . $key . '::';
         }
 
-        // Замена плейсхолдеров, если переданы значения.
+        // Replace placeholders if values were passed.
         if (!empty($values)) {
             $replace = [];
             foreach ($values as $k => $v) {
@@ -304,7 +304,7 @@ final class I18n
                     $replace[':' . $k] = (string) $v;
                 }
             }
-            // strtr быстрее, чем многократный str_replace.
+            // strtr is faster than repeated str_replace.
             $str = strtr($str, $replace);
         }
 

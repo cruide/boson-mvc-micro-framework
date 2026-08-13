@@ -2,31 +2,31 @@
 /**
  * Class Registry
  *
- * Базовый абстрактный реестр/контейнер свойств.
+ * Base abstract registry / property container.
  *
- * Назначение:
- * - хранение произвольного набора свойств в массиве `$properties`;
- * - доступ к данным как через объект (`$registry->name`),
- *   так и через массив (`$registry['name']`);
- * - поддержка аксессоров и мутаторов по соглашению:
+ * Purpose:
+ * - stores an arbitrary set of properties in the `$properties` array;
+ * - provides access to data both as an object (`$registry->name`)
+ *   and as an array (`$registry['name']`);
+ * - supports accessors and mutators by convention:
  *      - get{Name}Attribute()
  *      - set{Name}Attribute($value)
- * - экспорт в массив и JSON;
- * - удобная массовая загрузка данных.
+ * - exports to an array and JSON;
+ * - convenient bulk data loading.
  *
- * Совместимость:
+ * Compatibility:
  * - PHP 8.0+
- * - без строгой типизации свойств и аргументов
+ * - no strict typing of properties and arguments
  *
- * Особенности реализации:
- * - используется `array_key_exists()`, чтобы корректно отличать:
- *      - ключ существует и его значение равно `null`
- *      - ключ не существует
- * - `__isset()` намеренно использует `isset()`, чтобы сохранить
- *   нативное поведение PHP для `isset($obj->prop)`:
- *   если значение `null`, результат будет `false`
+ * Implementation details:
+ * - uses `array_key_exists()` to correctly distinguish between:
+ *      - the key exists and its value is `null`
+ *      - the key does not exist
+ * - `__isset()` intentionally uses `isset()` to preserve
+ *   the native PHP behavior for `isset($obj->prop)`:
+ *   if the value is `null`, the result is `false`
  *
- * Пример:
+ * Example:
  *
  * ```php
  * $registry = new SomeRegistry();
@@ -47,18 +47,18 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     use \Boson\Traits\ClassName;
 
     /**
-     * Внутреннее хранилище свойств.
+     * Internal property storage.
      *
-     * Весь набор данных Registry хранится здесь.
+     * The entire Registry dataset is stored here.
      *
      * @var array
      */
     protected $properties = [];
 
     /**
-     * Конструктор.
+     * Constructor.
      *
-     * Позволяет сразу заполнить реестр начальными данными.
+     * Allows populating the registry with initial data right away.
      *
      * @param array|\Traversable|null $properties
      */
@@ -70,12 +70,12 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Магический getter.
+     * Magic getter.
      *
-     * Перенаправляет доступ к несуществующему публичному свойству
-     * на метод `get()`.
+     * Redirects access to a non-existent public property
+     * to the `get()` method.
      *
-     * @param string $name Имя свойства
+     * @param string $name Property name
      * @return mixed|null
      */
     public function __get($name)
@@ -84,13 +84,13 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Магический setter.
+     * Magic setter.
      *
-     * Перенаправляет присвоение несуществующему публичному свойству
-     * на метод `set()`.
+     * Redirects assignment to a non-existent public property
+     * to the `set()` method.
      *
-     * @param string $name  Имя свойства
-     * @param mixed  $value Значение
+     * @param string $name  Property name
+     * @param mixed  $value Value
      * @return void
      */
     public function __set($name, $value)
@@ -99,15 +99,15 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Магическая проверка свойства через isset().
+     * Magic property check via isset().
      *
-     * Важно:
-     * - если ключ существует, но его значение `null`,
-     *   `isset()` вернёт `false`
+     * Important:
+     * - if the key exists but its value is `null`,
+     *   `isset()` returns `false`
      *
-     * Это соответствует стандартной семантике PHP.
+     * This matches the standard PHP semantics.
      *
-     * @param string $name Имя свойства
+     * @param string $name Property name
      * @return bool
      */
     public function __isset($name)
@@ -116,9 +116,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Магическое удаление свойства.
+     * Magic property deletion.
      *
-     * @param string $name Имя свойства
+     * @param string $name Property name
      * @return void
      */
     public function __unset($name)
@@ -127,10 +127,10 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Преобразование объекта в строку.
+     * Convert the object to a string.
      *
-     * Возвращает JSON-представление объекта.
-     * В случае ошибки кодирования вернёт пустой JSON-объект.
+     * Returns the JSON representation of the object.
+     * Returns an empty JSON object if encoding fails.
      *
      * @return string
      */
@@ -145,12 +145,12 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Проверяет существование ключа в реестре.
+     * Checks whether a key exists in the registry.
      *
-     * В отличие от `isset()`, метод `has()` считает ключ существующим,
-     * даже если его значение равно `null`.
+     * Unlike `isset()`, the `has()` method considers a key to exist
+     * even if its value is `null`.
      *
-     * @param string|int $name Имя ключа
+     * @param string|int $name Key name
      * @return bool
      */
     public function has($name)
@@ -163,7 +163,7 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает true, если реестр пуст.
+     * Returns true if the registry is empty.
      *
      * @return bool
      */
@@ -173,19 +173,19 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Устанавливает значение свойства.
+     * Sets a property value.
      *
-     * Алгоритм:
-     * 1. Если существует мутатор вида `set{Name}Attribute($value)`,
-     *    используется он.
-     * 2. Иначе значение записывается напрямую.
+     * Algorithm:
+     * 1. If a mutator of the form `set{Name}Attribute($value)` exists,
+     *    it is used.
+     * 2. Otherwise the value is stored directly.
      *
-     * Пример:
-     * - для ключа `first_name`
-     *   будет искаться метод `setFirstNameAttribute`
+     * Example:
+     * - for the `first_name` key
+     *   the `setFirstNameAttribute` method will be looked up
      *
-     * @param string|int $name  Имя ключа
-     * @param mixed      $value Значение
+     * @param string|int $name  Key name
+     * @param mixed      $value Value
      * @return $this
      */
     public function set($name, $value = null)
@@ -204,16 +204,16 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает значение свойства.
+     * Returns a property value.
      *
-     * Алгоритм:
-     * 1. Если существует аксессор вида `get{Name}Attribute()`,
-     *    вызывается он.
-     * 2. Если ключ существует в `$properties`, возвращается его значение.
-     * 3. Иначе возвращается `$default`.
+     * Algorithm:
+     * 1. If an accessor of the form `get{Name}Attribute()` exists,
+     *    it is called.
+     * 2. If the key exists in `$properties`, its value is returned.
+     * 3. Otherwise `$default` is returned.
      *
-     * @param string|int $name    Имя ключа
-     * @param mixed      $default Значение по умолчанию
+     * @param string|int $name    Key name
+     * @param mixed      $default Default value
      * @return mixed
      */
     public function get($name, $default = null)
@@ -232,9 +232,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает значение свойства и удаляет его из реестра.
+     * Returns a property value and removes it from the registry.
      *
-     * Полезно для "одноразового" чтения параметра.
+     * Useful for "one-shot" reads of a parameter.
      *
      * @param string|int $name
      * @param mixed      $default
@@ -250,7 +250,7 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Удаляет свойство по имени.
+     * Removes a property by name.
      *
      * @param string|int $name
      * @return $this
@@ -263,7 +263,7 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Полностью очищает реестр.
+     * Completely clears the registry.
      *
      * @return $this
      */
@@ -275,9 +275,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает все данные в виде массива.
+     * Returns all data as an array.
      *
-     * Это алиас к `toArray()`.
+     * This is an alias of `toArray()`.
      *
      * @return array
      */
@@ -287,9 +287,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Заменяет все текущие данные новыми.
+     * Replaces all current data with new data.
      *
-     * Сначала очищает реестр, затем вызывает `fill()`.
+     * First clears the registry, then calls `fill()`.
      *
      * @param array|\Traversable $properties
      * @return $this
@@ -302,9 +302,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Объединяет текущие данные с новыми.
+     * Merges the current data with new data.
      *
-     * По сути эквивалентен `fill()`, но семантически подчёркивает merge.
+     * Essentially equivalent to `fill()`, but semantically emphasizes merging.
      *
      * @param array|\Traversable $properties
      * @return $this
@@ -315,7 +315,7 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает только указанные ключи.
+     * Returns only the specified keys.
      *
      * @param array $keys
      * @return array
@@ -334,7 +334,7 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает все ключи, кроме указанных.
+     * Returns all keys except the specified ones.
      *
      * @param array $keys
      * @return array
@@ -354,9 +354,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Подсчитывает количество элементов.
+     * Counts the number of elements.
      *
-     * Реализация интерфейса `Countable`.
+     * Implementation of the `Countable` interface.
      *
      * @return int
      */
@@ -366,10 +366,10 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Сериализует реестр в строку PHP serialize().
+     * Serializes the registry into a PHP serialize() string.
      *
-     * В сериализацию попадает экспорт через `toArray()`, а не сырые данные.
-     * Это позволяет учитывать аксессоры и вложенные объекты.
+     * The serialization uses the export via `toArray()`, not the raw data.
+     * This lets accessors and nested objects be taken into account.
      *
      * @return string
      */
@@ -379,12 +379,12 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает JSON-представление реестра.
+     * Returns the JSON representation of the registry.
      *
-     * Если в классе-потомке существует метод `jsonTransform($data)`,
-     * то перед кодированием в JSON данные будут пропущены через него.
+     * If the descendant class has a `jsonTransform($data)` method,
+     * the data will be passed through it before JSON encoding.
      *
-     * @param int $options Опции json_encode()
+     * @param int $options json_encode() options
      * @return string
      */
     public function toJson($options = 0)
@@ -401,12 +401,12 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Преобразует реестр в массив.
+     * Converts the registry to an array.
      *
-     * Особенности:
-     * - значения читаются через `get()`, чтобы учитывались аксессоры;
-     * - вложенные объекты с методом `toArray()` преобразуются рекурсивно;
-     * - массивы также обрабатываются рекурсивно.
+     * Details:
+     * - values are read via `get()` so that accessors are taken into account;
+     * - nested objects with a `toArray()` method are converted recursively;
+     * - arrays are also processed recursively.
      *
      * @return array
      */
@@ -422,16 +422,16 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Массово заполняет реестр данными.
+     * Bulk-fills the registry with data.
      *
-     * Допустимые источники:
-     * - массив
-     * - объект Traversable
+     * Allowed sources:
+     * - an array
+     * - a Traversable object
      *
-     * Все значения проходят через `set()`, чтобы не обходить мутаторы.
+     * All values go through `set()` so that mutators are not bypassed.
      *
-     * Ключи валидируются как имена переменных PHP, если они строковые.
-     * Числовые ключи также допускаются.
+     * String keys are validated as PHP variable names.
+     * Numeric keys are also allowed.
      *
      * @param array|\Traversable $properties
      * @return $this
@@ -456,9 +456,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Проверяет существование элемента по offset.
+     * Checks whether an element exists at the given offset.
      *
-     * Реализация интерфейса `ArrayAccess`.
+     * Implementation of the `ArrayAccess` interface.
      *
      * @param mixed $key
      * @return bool
@@ -469,9 +469,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает элемент по offset.
+     * Returns the element at the given offset.
      *
-     * Реализация интерфейса `ArrayAccess`.
+     * Implementation of the `ArrayAccess` interface.
      *
      * @param mixed $key
      * @return mixed|null
@@ -482,9 +482,9 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Устанавливает элемент по offset.
+     * Sets the element at the given offset.
      *
-     * Если ключ равен `null`, элемент будет добавлен как в обычный массив.
+     * If the key is `null`, the element is appended like in a plain array.
      *
      * @param mixed $key
      * @param mixed $value
@@ -502,7 +502,7 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Удаляет элемент по offset.
+     * Removes the element at the given offset.
      *
      * @param mixed $key
      * @return void
@@ -513,12 +513,12 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Возвращает итератор для foreach.
+     * Returns an iterator for foreach.
      *
-     * Реализация интерфейса `IteratorAggregate`.
+     * Implementation of the `IteratorAggregate` interface.
      *
-     * Итерация идёт по "экспортированному" массиву, а не по сырым данным,
-     * чтобы учитывать аксессоры и преобразования.
+     * Iteration runs over the "exported" array, not the raw data,
+     * so that accessors and transformations are taken into account.
      *
      * @return \ArrayIterator
      */
@@ -528,14 +528,14 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Реализация интерфейса `JsonSerializable`.
+     * Implementation of the `JsonSerializable` interface.
      *
-     * Возвращает массив данных, который затем будет сериализован
-     * функцией `json_encode()`.
+     * Returns the data array that will then be serialized
+     * by the `json_encode()` function.
      *
-     * Важно:
-     * - здесь возвращается массив, а не строка JSON
-     * - это корректное поведение для JsonSerializable
+     * Important:
+     * - an array is returned here, not a JSON string
+     * - this is the correct behavior for JsonSerializable
      *
      * @return array
      */
@@ -551,14 +551,14 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Преобразует имя поля в StudlyCase.
+     * Converts a field name to StudlyCase.
      *
-     * Примеры:
+     * Examples:
      * - first_name => FirstName
      * - first-name => FirstName
      * - first name => FirstName
      *
-     * Локальная реализация нужна для независимости от внешних helper-функций.
+     * A local implementation is used to avoid depending on external helper functions.
      *
      * @param string $value
      * @return string
@@ -574,11 +574,11 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Проверяет допустимость ключа для записи в реестр.
+     * Checks whether a key is allowed to be written to the registry.
      *
-     * Допускаются:
-     * - целые числа
-     * - строки, похожие на корректные имена переменных PHP
+     * Allowed:
+     * - integers
+     * - strings that look like valid PHP variable names
      *
      * @param mixed $key
      * @return bool
@@ -597,13 +597,13 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
     }
 
     /**
-     * Нормализует значение для экспорта в массив.
+     * Normalizes a value for array export.
      *
-     * Правила:
-     * - если объект имеет `toArray()` — вызывается он;
-     * - если объект реализует `JsonSerializable` — берётся `jsonSerialize()`;
-     * - если это массив — обрабатывается рекурсивно;
-     * - иначе возвращается как есть.
+     * Rules:
+     * - if the object has `toArray()`, it is called;
+     * - if the object implements `JsonSerializable`, `jsonSerialize()` is used;
+     * - if it is an array, it is processed recursively;
+     * - otherwise it is returned as is.
      *
      * @param mixed $value
      * @return mixed
