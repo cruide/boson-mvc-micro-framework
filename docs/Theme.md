@@ -1,115 +1,112 @@
-# Документация класса `Theme` (Boson Framework)
+# Theme Class Documentation (Boson Framework)
 
-**Версия:** 2.1
+**Version:** 2.1
 
-Управление темами и рендерингом. Поддерживает горячую смену движка (Smarty / Native PHTML) и темы оформления. Единый экземпляр движка для layout и view.
+Theme and rendering manager. Supports hot-swappable engines (Smarty / Native PHTML) and themes. Single engine instance for both layout and view.
 
-## Конфигурация (`config.ini`)
+## Configuration (`config.ini`)
 
 ```ini
-theme  = "smarty"                               ; Папка темы в themes/
-layout = "layout"                               ; Файл макета
-cover  = "smarty"                               ; Движок: smarty или native (PHTML)
+theme  = "smarty"           ; Theme folder in themes/
+layout = "layout"           ; Layout file name
+cover  = "smarty"           ; Engine: smarty or native (PHTML)
 
-; Защитные заголовки (0 = отключить)
+; Security headers (0 to disable)
 x_frame_options        = "DENY"
 x_content_type_options = "nosniff"
 referrer_policy        = "strict-origin-when-cross-origin"
 ```
 
-## Горячая смена движка
+## Hot-swap Engine
 
-Достаточно изменить `cover` в `config.ini`:
-- `smarty` — шаблоны `.tpl` с синтаксисом `{$var}`, `{if}`, `{i18n}`
-- `native` — шаблоны `.phtml` с нативным PHP `<?=$var?>`, `<?php if(): ?>`
+Change `cover` in `config.ini`:
+- `smarty` — `.tpl` templates with `{$var}`, `{if}`, `{i18n}` syntax
+- `native` — `.phtml` templates with `<?=$var?>`, `<?php if(): ?>`
 
-Контроллеры не требуют изменений — `view('path')` работает одинаково.
+Controllers don't need changes — `view('path')` works the same.
 
-## Горячая смена темы
+## Hot-swap Theme
 
 ```php
-theme('newtheme'); // переключает папку шаблонов на лету
+theme('newtheme'); // switches template folder on the fly
 ```
 
-## Назначение переменных
+## Template Variables
 
 ```php
-// В контроллере
-theme()->assign('title', 'Моя страница');
+theme()->assign('title', 'My Page');
 theme()->assign('users', $users);
 ```
 
-Глобальные переменные (доступны всегда): `{$base_url}`, `{$js_url}`, `{$css_url}`, `{$images_url}`, `{$content_url}`.
+Always-available globals: `{$base_url}`, `{$js_url}`, `{$css_url}`, `{$images_url}`, `{$content_url}`.
 
-## Динамический CSS/JS
+## Dynamic CSS/JS
 
 ```php
-// В контроллере — добавить стиль/скрипт на лету:
 theme()->useThemeCss('extra.css');
-theme()->useThemeJs('widget.js', $head = false);  // false = перед </body>
+theme()->useThemeJs('widget.js', $head = false);  // false = before </body>
 theme()->useExternalJs('https://cdn.example.com/lib.js');
 ```
 
-В шаблоне доступны переменные:
-- `{$boson_css}` — массив URL стилей
-- `{$boson_js_head}` — массив URL скриптов для `<head>`
-- `{$boson_js_body}` — массив URL скриптов для `<body>`
+Template variables:
+- `{$boson_css}` — array of CSS URLs
+- `{$boson_js_head}` — array of JS URLs for `<head>`
+- `{$boson_js_body}` — array of JS URLs for `<body>`
 
-Если шаблон их не использует — работает авто-инжекция через regex (совместимость).
+If the template doesn't use them, regex auto-injection works as fallback.
 
-## Рендеринг
+## Rendering
 
 ```php
-// В контроллере:
-return view('index/index');              // themes/{theme}/views/index/index.tpl
-return view('index/index', ['var' => 1]); // с переменными
+// In controller:
+return view('index/index');               // themes/{theme}/views/index/index.tpl
+return view('index/index', ['var' => 1]); // with variables
 
-// JSON без layout:
+// JSON without layout:
 return json_response(['status' => 'ok']);
 
-// Без layout вручную:
+// Manual layout disable:
 theme()->disableLayout();
 echo $content;
 ```
 
-## Плагины Smarty
+## Smarty Plugins
 
-Стандартные: `{i18n str="ключ"}`, `{num2word number=n words=['год','года','лет']}`.
+Built-in: `{i18n str="key"}`, `{num2word number=n words=['year','years']}`.
 
-Регистрация своих:
+Custom:
 ```php
 theme()->addPlugin('function', 'myplugin', 'smarty_function_myplugin');
 ```
 
-## Flash-сообщения
+## Flash Messages
 
 ```php
-session()->flash('message', 'Сохранено!');
-// На следующем запросе: $message = session()->flash('message');
-// Автоматически удаляется после чтения
+session()->flash('message', 'Saved!');
+// Next request: $message = session()->flash('message');
+// Auto-deleted after read
 ```
 
-## Защитные заголовки
+## Security Headers
 
-Отправляются автоматически. Настраиваются в `config.ini`. Значение `0` отключает конкретный заголовок.
+Sent automatically. Configurable in `config.ini`. Value `0` disables a specific header.
 
-## Методы
+## Methods
 
-| Метод | Описание |
+| Method | Description |
 |---|---|
-| `assign($name, $value)` | Переменная для шаблона |
-| `setGlobals()` | Установить base_url, js_url, css_url и т.д. |
-| `display($content)` | Рендеринг макета с контентом |
-| `disableLayout()` / `enableLayout()` | Отключить/включить макет |
-| `setTheme($name)` | Сменить тему на лету |
-| `setLayoutName($name)` | Сменить файл макета |
-| `useThemeCss($file)` | Добавить CSS из темы |
-| `useExternalCss($url)` | Добавить внешний CSS |
-| `useThemeJs($file, $head?)` | Добавить JS из темы |
-| `useExternalJs($url, $head?)` | Добавить внешний JS |
-| `setHeader($header)` | Добавить HTTP-заголовок |
-| `addPlugin($type, $name, $cb)` | Зарегистрировать плагин движка |
-| `getThemeUrl()` / `getThemePath()` | URL/путь текущей темы |
-| `getThemeViewsPath()` | Путь к views текущей темы |
-| `engineType()` | Тип движка: `'smarty'` или `'native'` |
-| `layout()` / `view()` | Экземпляр движка (для обратной совместимости) |
+| `assign($name, $value)` | Template variable |
+| `setGlobals()` | Set base_url, js_url, css_url, etc. |
+| `display($content)` | Render layout with content |
+| `disableLayout()` / `enableLayout()` | Toggle layout |
+| `setTheme($name)` | Switch theme |
+| `setLayoutName($name)` | Change layout file |
+| `useThemeCss($file)` | Add CSS from theme |
+| `useExternalCss($url)` | Add external CSS |
+| `useThemeJs($file, $head?)` | Add JS from theme |
+| `useExternalJs($url, $head?)` | Add external JS |
+| `setHeader($header)` | Add HTTP header |
+| `addPlugin($type, $name, $cb)` | Register engine plugin |
+| `getThemeUrl()` / `getThemePath()` | Theme URL/path |
+| `engineType()` | Engine type: `'smarty'` or `'native'` |
+| `layout()` / `view()` | Engine instance (backward compat) |

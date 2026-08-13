@@ -1,95 +1,95 @@
-# Документация класса `App` (Boson Framework)
+# App Class Documentation (Boson Framework)
 
-**Версия:** 2.1
+**Version:** 2.1
 
-Центральный диспетчер запроса. Управляет жизненным циклом: инициализация → маршрутизация → контроллер → рендеринг. Поддерживает хуки, настраиваемый CSRF, обработку исключений, middleware-пайплайн.
+Central request dispatcher. Manages the lifecycle: initialization → routing → controller → rendering. Supports hooks, configurable CSRF, exception handling, middleware pipeline.
 
-## Жизненный цикл запроса
+## Request Lifecycle
 
 ```
 app()->execute()
   ├─ cors()
-  ├─ хуки beforeRequest
-  ├─ CSRF-проверка (для POST/PUT/PATCH/DELETE)
+  ├─ beforeRequest hooks
+  ├─ CSRF check (for POST/PUT/PATCH/DELETE)
   ├─ router()->dispatch()          ← middleware pipeline
-  │    ├─ middleware (глобальные + маршрута)
-  │    ├─ _before()                ← хук контроллера
-  │    ├─ метод контроллера
-  │    └─ _after()                 ← хук контроллера
-  ├─ хуки afterResponse
+  │    ├─ middleware (global + route)
+  │    ├─ _before()                ← controller hook
+  │    ├─ controller action
+  │    └─ _after()                 ← controller hook
+  ├─ afterResponse hooks
   └─ theme()->display($content)
 ```
 
-Необработанные исключения перехватываются `handleException()` — в debug-режиме показывает файл и строку, в production — общее сообщение.
+Unhandled exceptions are caught by `handleException()` — debug mode shows file and line, production shows generic message.
 
-## Конфигурация (`config.ini`)
+## Configuration (`config.ini`)
 
 ```ini
-debug        = "on"    ; on — подробные ошибки, off — общее сообщение
-csrf_enabled = "on"    ; on — включена, off — отключена
+debug        = "on"    ; on — detailed errors, off — generic message
+csrf_enabled = "on"    ; on — enabled, off — disabled
 ```
 
-## Хуки уровня приложения
+## App-level Hooks
 
-Регистрируются в `app/Bootstrap.php`. Позволяют добавить логику без правки каждого контроллера.
+Register in `app/Bootstrap.php`. Add logic without touching every controller.
 
 ```php
-// Перед каждым запросом
+// Before every request
 app()->hook('beforeRequest', function() {
     if( cfg('config', 'maintenance') === 'on' && !is_auth() ) {
-        abort('Сайт на обслуживании', 503);
+        abort('Site under maintenance', 503);
     }
 });
 
-// После контроллера, до рендеринга (можно менять $content)
+// After controller, before rendering (can modify $content)
 app()->hook('afterResponse', function(&$content) {
     $duration = round(microtime(true) - BOSON_START_TIME, 3);
     $content = str_replace('</body>', "<!-- {$duration}s --></body>", $content);
 });
 ```
 
-## Настройка CSRF
+## CSRF Configuration
 
 ```php
-// Кастомная проверка (callback должен вернуть true или строку с ошибкой)
+// Custom checker (callback must return true or error string)
 app()->csrfChecker(function() {
-    return input()->header('X-Custom-Token') === 'secret' ? true : 'Неверный токен';
+    return input()->header('X-Custom-Token') === 'secret' ? true : 'Invalid token';
 });
 
-// Полное отключение (или csrf_enabled = off в config.ini)
+// Full disable (or csrf_enabled = off in config.ini)
 app()->csrfChecker(fn() => true);
 
-// Вернуть стандартную проверку
+// Restore default
 app()->csrfChecker(null);
 ```
 
-## Обработка исключений
+## Exception Handling
 
-`AppException` — прерывает выполнение с указанным сообщением и кодом 500.
+`AppException` — terminates execution with specified message and 500 code.
 
-Любое другое исключение (`TypeError`, `PDOException`, ...) перехватывается:
-- **debug = on** — показывает класс, сообщение, файл и строку
-- **debug = off** — «Внутренняя ошибка сервера»
+Any other exception (`TypeError`, `PDOException`, ...) is caught:
+- **debug = on** — shows class, message, file, and line
+- **debug = off** — "Internal server error"
 
-Все исключения пишутся в `error_log()`.
+All exceptions are written to `error_log()`.
 
 ## Middleware
 
-Middleware регистрируются через роутер и выполняются через `router()->dispatch()` внутри `App::runRequest()`.
+Registered via router and executed through `router()->dispatch()` inside `App::runRequest()`.
 
 ```php
-// В Routes.php
+// In Routes.php
 router()->middleware('LoggerMiddleware');
 router()->get('/admin', 'Admin@index')->middleware(['AuthMiddleware']);
 ```
 
-Класс middleware должен иметь метод `handle($route, $next)`.
+Middleware class must have `handle($route, $next)` method.
 
-## Методы
+## Methods
 
-| Метод | Описание |
+| Method | Description |
 |---|---|
-| `getController()` | Текущий экземпляр контроллера |
-| `hook($event, $callback)` | Зарегистрировать хук (`beforeRequest`, `afterResponse`) |
-| `csrfChecker(?callable)` | Установить кастомный CSRF-проверяющий |
-| `execute()` | Запустить выполнение запроса |
+| `getController()` | Current controller instance |
+| `hook($event, $callback)` | Register hook (`beforeRequest`, `afterResponse`) |
+| `csrfChecker(?callable)` | Set custom CSRF checker |
+| `execute()` | Run request execution |

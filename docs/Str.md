@@ -1,84 +1,83 @@
-# Документация класса `Str` (Boson Framework)
+# Str Class Documentation (Boson Framework)
 
-Набор статических методов для работы со строками. Все методы поддерживают UTF-8 через `mbstring`, с fallback на `iconv` (windows-1251) и однобайтовые функции.
+Static string helper methods. All UTF-8 aware via `mbstring`, with `iconv` (windows-1251) and single-byte fallbacks.
 
-## Методы
+## Methods
 
 ### `Str::ucfirst($str): string`
-Заглавная первая буква (multibyte).
+Uppercase first letter (multibyte).
 ```php
-Str::ucfirst('привет'); // "Привет"
+Str::ucfirst('hello'); // "Hello"
 ```
 
 ### `Str::lower($str): string`
-Нижний регистр (multibyte).
+Lowercase (multibyte).
 ```php
-Str::lower('ПРИВЕТ'); // "привет"
+Str::lower('HELLO'); // "hello"
 ```
 
 ### `Str::upper($str): string`
-Верхний регистр (multibyte).
+Uppercase (multibyte).
 ```php
-Str::upper('привет'); // "ПРИВЕТ"
+Str::upper('hello'); // "HELLO"
 ```
 
 ### `Str::length($str): int`
-Длина строки в символах (multibyte).
+String length in characters (multibyte).
 ```php
-Str::length('привет'); // 6
+Str::length('hello'); // 5
 ```
 
 ### `Str::strstr($haystack, $needle, $part?): string|false`
-Поиск подстроки (multibyte-аналог `strstr`).
+Find substring (multibyte `strstr`).
 ```php
 Str::strstr('hello@example.com', '@'); // "@example.com"
 ```
 
 ### `Str::contains($haystack, $needle): bool`
-Содержит ли строка подстроку.
+Check if string contains substring.
 ```php
 Str::contains('hello world', 'world'); // true
 ```
 
 ### `Str::startsWith($haystack, $needle): bool`
-Начинается ли строка с подстроки.
+Check if string starts with substring.
 ```php
 Str::startsWith('https://site.ru', 'https'); // true
 ```
 
 ### `Str::endsWith($haystack, $needle): bool`
-Заканчивается ли строка на подстроку.
+Check if string ends with substring.
 ```php
 Str::endsWith('file.pdf', '.pdf'); // true
 ```
 
 ### `Str::crop($string, $length?): string`
-Обрезка до ближайшего пробела в пределах лимита (с `...` если длиннее).
+Truncate to nearest word boundary within limit (adds `...` if longer).
 ```php
-Str::crop('Длинный текст для примера обрезки строки', 20);
-// "Длинный текст для..."
+Str::crop('A long text for demonstration of truncation', 20);
+// "A long text for..."
 ```
 
 ### `Str::truncate($string, $length?, $etc?, $break_words?, $middle?): string`
-Обрезка строки с многоточием. Поддерживает обрезку с середины (`$middle=true`).
+Truncate with ellipsis. Supports middle truncation (`$middle=true`).
 ```php
-Str::truncate('оченьдлинноеимяфайла.txt', 15, '…', false, true);
-// "оченьд…айла.txt"
+Str::truncate('verylongfilename.txt', 15, '…', false, true);
+// "verylong…name.txt"
 ```
 
-## Глобальные алиасы
+## Global Aliases
 
-В `Functions.php` определены короткие функции:
+Defined in `Functions.php`:
 
-| Функция | Аналог |
+| Function | Equivalent |
 |---|---|
 | `str_ucfirst($s)` | `Str::ucfirst($s)` |
 | `str_lower($s)` | `Str::lower($s)` |
 | `str_upper($s)` | `Str::upper($s)` |
 | `str_length($s)` | `Str::length($s)` |
 
-## Использование в проекте
+## Usage in Framework
 
-- **Validator** — `Str::length()` для `minlen`/`maxlen`, `Str::ucfirst()` для сообщений об ошибках
-- **Темы (PHTML)** — `str_ucfirst()` в `layout.phtml`
-- **EloquentModel** — не использует напрямую
+- **Validator** — `Str::length()` for `minlen`/`maxlen`, `Str::ucfirst()` for error messages
+- **PHTML Themes** — `str_ucfirst()` in `layout.phtml`

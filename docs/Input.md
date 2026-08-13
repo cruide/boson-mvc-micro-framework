@@ -1,316 +1,113 @@
-# Документация класса `Boson\Input` (Boson Framework)
+# Input Class Documentation (Boson Framework)
 
-**Версия:** 2.1
+**Version:** 2.1
 
-Класс `Input` предназначен для безопасной и унифицированной работы с входными данными HTTP-запроса. Он объединяет доступ к параметрам `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, JSON-телу, заголовкам, файлам и cookie.
+Single access point for all HTTP request data. Unifies GET, POST, PUT/PATCH/DELETE body, JSON body, headers, files, and cookies. Automatic XSS cleaning. Typed access methods.
 
-**Основные возможности:**
-*   **Безопасность:** Автоматическая XSS-очистка данных при получении.
-*   **Универсальность:** Единый интерфейс для всех типов данных запроса.
-*   **Производительность:** Кэширование заголовков, метода, тела запроса и XSS-очистки.
-*   **Типизированный доступ:** `int()`, `float()`, `bool()`, `string()`, `date()`, `array()`.
-*   **Валидация:** Проверка ключей на допустимые символы.
-
----
-
-## 1. Инициализация
-
-Класс реализует паттерн **Singleton**. Доступ через глобальную функцию `input()`:
+## Basic Access
 
 ```php
-// Получить экземпляр
-$input = input();
+$email = input('email');              // XSS-cleaned value
+$limit = input('limit', 10);          // with default
 
-// Получить значение параметра
-$username = input('username');
-$limit    = input('limit', 10);
+$all = input()->all();                // all parameters (XSS-cleaned)
+
+input()->filled('email');             // key exists and is not empty
+input()->missing('token');            // key missing or empty
+input()->has('id');                   // key exists (even if null)
+
+$subset = input()->only(['name', 'email']);
+$rest   = input()->except(['password']);
 ```
 
----
-
-## 2. Работа с параметрами запроса
-
-Данные из `$_GET`, `$_POST` и тела запроса (для PUT/PATCH/DELETE) автоматически собираются в конструкторе.
-
-### Получение значения
-Метод `input()` возвращает XSS-очищенное значение параметра.
+## Typed Access (no XSS, faster)
 
 ```php
-$username = input('username');
-$limit    = input('limit', 10);
+$id       = input()->int('id', 0);          // (int)
+$price    = input()->float('price', 0.0);   // (float)
+$active   = input()->bool('active');        // '1'/'true'/'yes'/'on' → true
+$name     = input()->string('name');        // (string) with XSS
+$tags     = input()->array('tags', []);     // (array)
+$birthday = input()->date('birthday');      // DateTime or null
+$birthday = input()->date('birthday', 'Y-m-d'); // with format
 ```
 
-### Получение всех данных
-```php
-$data = input()->all();
-```
+`bool()` recognizes: `'1'`, `'true'`, `'yes'`, `'on'` as `true`; `'0'`, `'false'`, `'no'`, `'off'`, `''` as `false`.
 
-### Проверка наличия данных
-```php
-if( input()->filled('email') ) {
-    // Ключ существует И значение не пустое
-}
-
-if( input()->missing('token') ) {
-    // Ключ отсутствует ИЛИ значение пустое
-}
-
-if( input()->has('id') ) {
-    // Ключ существует (даже если значение null)
-}
-```
-
-### Фильтрация данных
-```php
-$userData = input()->only(['name', 'email', 'age']);
-$settings = input()->except(['password', 'password_confirm']);
-```
-
----
-
-## 3. Типизированный доступ
-
-Методы для безопасного приведения типов. Не применяют XSS-очистку (кроме `string()`), работают быстрее чем `input()`.
-
-### Числа
-```php
-$id    = input()->int('id', 0);       // (int)
-$price = input()->float('price', 0.0); // (float)
-```
-
-### Булево
-Распознаёт строки `'1'`, `'true'`, `'yes'`, `'on'` как `true`, и `'0'`, `'false'`, `'no'`, `'off'`, `''` как `false`.
+## Separate GET/POST
 
 ```php
-$active   = input()->bool('active');        // из чекбокса
-$remember = input()->bool('remember', false);
+$page    = input()->query('page', 1);   // $_GET only
+$allGet  = input()->query();            // all GET params
+
+$email   = input()->post('email');      // $_POST only
+$allPost = input()->post();             // all POST params
 ```
 
-### Строка
-```php
-$name = input()->string('name', ''); // с XSS-очисткой
-```
-
-### Массив
-```php
-$tags  = input()->array('tags', []);
-$roles = input()->array('roles');
-```
-
-### Дата
-```php
-$birthday = input()->date('birthday');                // DateTime или null
-$from     = input()->date('from', 'Y-m-d');           // с указанием формата
-```
-
----
-
-## 4. GET и POST раздельно
-
-Когда нужно получить значение строго из одного источника:
+## Request Checks
 
 ```php
-// Только GET-параметры (строка запроса)
-$page  = input()->query('page', 1);
-$sort  = input()->query('sort', 'name');
-$allGet = input()->query(); // весь массив GET
-
-// Только POST-параметры (тело формы)
-$email  = input()->post('email');
-$allPost = input()->post(); // весь массив POST
+input()->method();         // 'GET', 'POST', 'PUT'...
+input()->isPost();         // true if POST
+input()->isGet();          // true if GET
+input()->isPut();          // true if PUT
+input()->isPatch();        // true if PATCH
+input()->isDelete();       // true if DELETE
+input()->isHead();         // true if HEAD
+input()->isOptions();      // true if OPTIONS
+input()->isAjax();         // X-Requested-With: XMLHttpRequest
+input()->isJson();         // Content-Type: application/json
+input()->expectsJson();    // AJAX or Accept: /json
+input()->isSecure();       // HTTPS (including X-Forwarded-Proto)
 ```
 
-В отличие от `input()` (который ищет во всех источниках), `query()` и `post()` читают строго из `$_GET` и `$_POST` соответственно. XSS-очистка применяется.
-
----
-
-## 5. HTTP Метод и Тип запроса
+## Headers
 
 ```php
-$method = input()->method();
+input()->header('Content-Type');       // single header
+input()->header('X-Custom', 'default');
+input()->headers();                    // all headers (array)
 
-if( input()->isPost() ) { /* обработка формы */ }
-if( input()->isMethod('PUT') ) { /* API обновление */ }
+input()->bearerToken();                // Bearer token from Authorization
 ```
 
-*Поддерживается переопределение метода через заголовок `X-HTTP-Method-Override` или поле `_method`.*
-
-### AJAX и JSON-проверки
-```php
-// XMLHttpRequest?
-if( input()->isAjax() ) { ... }
-
-// Content-Type: application/json?
-if( input()->isJson() ) {
-    $data = input()->json();
-}
-
-// Клиент ожидает JSON-ответ? (AJAX или Accept: application/json)
-if( input()->expectsJson() ) {
-    return json_response($data);
-}
-```
-
-### Тип соединения
-```php
-if( input()->isSecure() ) {
-    // HTTPS
-}
-```
-
----
-
-## 6. Заголовки (Headers)
+## JSON & Raw Body
 
 ```php
-$contentType = input()->header('Content-Type');
-$authHeader  = input()->header('Authorization');
-$allHeaders  = input()->headers();
+input()->json();                       // whole JSON body as array
+input()->json('user_id', 0);           // specific key
+
+input()->raw();                        // raw php://input
 ```
 
-### Bearer Токен
-```php
-$token = input()->bearerToken();
-if( $token === false ) {
-    // Токен не найден
-}
-```
-
----
-
-## 7. JSON и Raw Input
+## Files
 
 ```php
-// Весь JSON payload
-$data = input()->json();
+input()->hasFile('avatar');            // file uploaded successfully?
+$file = input()->file('avatar');       // $_FILES array
 
-// Конкретное поле
-$userId = input()->json('user_id', 0);
-
-// Сырое тело запроса
-$raw = input()->raw();
+input()->files();                      // all files
 ```
 
----
-
-## 8. Файлы
+## Client Info
 
 ```php
-if( input()->hasFile('avatar') ) {
-    $fileInfo = input()->file('avatar');
-    move_uploaded_file($fileInfo['tmp_name'], '/path/to/save');
-}
-
-$files = input()->files();
+input()->ip();          // client IP (checks 7 proxy headers)
+input()->userAgent();   // User-Agent string
+input()->uri();         // full URI with query string
+input()->path();        // path without query string
+input()->cookie('name', 'default');
+input()->server('DOCUMENT_ROOT');
 ```
 
----
+## Method Override
 
-## 9. Окружение, Cookies и Клиент
+Supports `X-HTTP-Method-Override` header and `_method` POST field. A POST with `_method=PUT` is treated as PUT for both method detection and CSRF check.
 
-```php
-$sessionId    = input()->cookie('session_id', 'default');
-$documentRoot = input()->server('DOCUMENT_ROOT');
-$ip           = input()->ip();        // учитывает прокси
-$ua           = input()->userAgent();
-$uri          = input()->uri();       // полный URI с query string
-$path         = input()->path();      // путь без query string
-```
+## Security
 
----
-
-## 10. Безопасность и Валидация
-
-### XSS Защита
-Все строковые значения, получаемые через `input()`, `string()`, `query()`, `post()`, автоматически проходят очистку от XSS-атак. Результат кэшируется — повторные запросы того же ключа не фильтруются заново.
-
-Методы `int()`, `float()`, `bool()`, `array()`, `date()` XSS-очистку **не** применяют — для чисел и булевых значений она не нужна.
-
-### Валидация ключей
-По умолчанию ключи с недопустимыми символами игнорируются. Допустимые символы: `a-z`, `0-9`, `_`, `-`, `/`, `:`, `.`.
-
-Строгий режим (прерывает запрос при невалидном ключе):
-
-```php
-// Программно:
-input()->setStrictKeyValidation(true);
-
-// Или через конфиг app/configs/config.ini:
-// input_strict_key_validation = on
-```
-
----
-
-## Справочник методов
-
-### Базовый доступ
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `input($name, $default)` | Параметр с XSS-очисткой | `mixed` |
-| `all()` | Все параметры запроса | `array` |
-| `filled($name)` | Параметр есть и не пуст | `bool` |
-| `missing($name)` | Параметра нет или он пуст | `bool` |
-| `has($name)` | Ключ существует (даже если null) | `bool` |
-| `only($keys)` | Массив только с указанными ключами | `array` |
-| `except($keys)` | Массив всех ключей кроме указанных | `array` |
-
-### Типизированный доступ
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `int($name, $default)` | Целое число | `int` |
-| `float($name, $default)` | Число с плавающей точкой | `float` |
-| `bool($name, $default)` | Булево ('1','true','yes','on' → true) | `bool` |
-| `string($name, $default)` | Строка с XSS-очисткой | `string` |
-| `array($name, $default)` | Массив | `array` |
-| `date($name, $format?, $default?)` | Объект DateTime | `?\DateTime` |
-
-### Источники
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `query($key?, $default?)` | Только GET-параметры | `mixed` |
-| `post($key?, $default?)` | Только POST-параметры | `mixed` |
-| `json($key?, $default?)` | Данные из JSON-тела | `mixed` |
-| `raw()` | Сырое тело запроса | `string` |
-
-### HTTP
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `method()` | HTTP метод | `string` |
-| `isGet()`, `isPost()`, `isPut()`, `isPatch()`, `isDelete()` | Проверка метода | `bool` |
-| `isMethod($name)` | Проверка произвольного метода | `bool` |
-| `isAjax()` | X-Requested-With: XMLHttpRequest | `bool` |
-| `isJson()` | Content-Type содержит application/json | `bool` |
-| `expectsJson()` | AJAX или Accept: /json | `bool` |
-| `isSecure()` | HTTPS | `bool` |
-
-### Заголовки
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `header($name, $default?)` | HTTP заголовок | `mixed` |
-| `headers()` | Все заголовки | `array` |
-| `bearerToken()` | Bearer токен из Authorization | `string\|false` |
-
-### Файлы / Cookies / Клиент
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `file($name)` | Данные файла | `?array` |
-| `hasFile($name)` | Файл загружен успешно | `bool` |
-| `files()` | Все файлы | `array` |
-| `cookie($name, $default?)` | Значение Cookie | `mixed` |
-| `server($name, $default?)` | Переменная $_SERVER | `mixed` |
-| `ip()` | IP адрес клиента | `string` |
-| `userAgent()` | User-Agent | `?string` |
-| `uri()` | Полный URI | `string` |
-| `path()` | Путь без query string | `string` |
-
-### Настройки
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `setStrictKeyValidation($bool)` | Строгая валидация ключей | `self` |
+- All string values from `input('key')`, `string()`, `query()`, `post()` pass through `_xss_clean()` — removes `on*` attributes, `javascript:` URIs, dangerous tags.
+- `int()`, `float()`, `bool()`, `array()`, `date()` skip XSS (unnecessary for non-string types).
+- XSS results are cached — repeated reads of the same key don't re-run the filter.
+- Key validation: only `[a-z0-9:_\.\/\-]` allowed. Invalid keys are silently skipped (or abort in strict mode).
+- Strict mode via config: `input_strict_key_validation = on` in `config.ini`.

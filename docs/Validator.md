@@ -1,12 +1,10 @@
-# Документация класса Validator (Boson Framework)
+# Validator Documentation (Boson Framework)
 
-**Версия:** 2.1
+**Version:** 2.1
 
-Класс `Boson\Validator` — гибкий валидатор входных данных. Поддерживает строковые правила (pipe-синтаксис), массивы, Closure-валидаторы, кастомные правила, локализацию сообщений.
+Pipe-syntax validation with 25+ built-in rules. Supports custom validators, i18n messages, and reusable instances.
 
----
-
-## Быстрый старт
+## Quick Start
 
 ```php
 $validator = validator($data, [
@@ -21,201 +19,126 @@ if ($validator->fails()) {
 $clean = $validator->validated();
 ```
 
----
-
-## Инициализация
+## Initialization
 
 ```php
-// Через глобальную функцию
+// Global function
 $validator = validator($values, $rules);
 
-// Через конструктор
+// Constructor
 $validator = new Boson\Validator($values, $rules);
 
-// Статический фабричный метод
+// Static factory
 $validator = Boson\Validator::make($values, $rules);
 ```
 
----
+## Rule Formats
 
-## Правила валидации
-
-Правила задаются строкой с разделителем `|`, массивом или Closure.
-
-### Строковый формат
 ```php
+// Pipe-delimited string
 'username' => 'required|alpha|minlen:3|maxlen:20'
-```
 
-### Массивный формат
-```php
+// Array format
 'username' => ['required', 'alpha', 'minlen' => 3, 'maxlen' => 20]
-```
 
-### Closure
-```php
+// Closure
 'username' => function($field, $value, $allValues) {
-    return $value !== 'admin'; // true — ок, false/string — ошибка
+    return $value !== 'admin'; // true — ok, false/string — error
 }
 ```
 
-### Список правил
+## Available Rules
 
-| Правило | Описание | Пример |
-| :--- | :--- | :--- |
-| **Обязательность** | | |
-| `required` | Поле должно быть заполнено | `required` |
-| `nullable` | Поле может быть null (но если передано — валидируется) | `nullable` |
-| **Типы** | | |
-| `int` / `integer` | Целое число | `int` |
-| `float` | Число с плавающей точкой | `float` |
-| `bool` / `boolean` | Булево значение | `bool` |
-| `numeric` | Число (int или float) | `numeric` |
-| `json` | Валидная JSON-строка | `json` |
-| **Строки и форматы** | | |
-| `email` | Email-адрес | `email` |
+| Rule | Description | Example |
+|---|---|---|
+| `required` | Field must be filled | `required` |
+| `nullable` | Field may be null (but validated if present) | `nullable` |
+| `trim` | Trim whitespace before validation | `trim` |
+| `int` / `integer` | Integer | `int` |
+| `float` | Float | `float` |
+| `bool` / `boolean` | Boolean | `bool` |
+| `numeric` | Number (int or float) | `numeric` |
+| `email` | Email address | `email` |
 | `url` | URL | `url` |
-| `alpha` | Только буквы (включая кириллицу) | `alpha` |
-| `alphanum` | Буквы и цифры | `alphanum` |
-| `date` | Валидная дата | `date`, `date:Y-m-d` |
-| `regexp` | Регулярное выражение | `regexp:/^\d+$/` |
-| **Длина и размер** | | |
-| `minlen` | Минимальная длина строки | `minlen:5` |
-| `maxlen` | Максимальная длина строки | `maxlen:50` |
-| `min` | Минимальное числовое значение | `min:10` |
-| `max` | Максимальное числовое значение | `max:100` |
-| **Сравнение** | | |
-| `same` | Совпадает с другим полем | `same:password_confirm` |
-| `confirmed` | Совпадает с полем `{field}_confirmation` | `confirmed` |
-| `in` | Значение в списке | `in:active,banned` |
-| `not_in` | Значение не в списке | `not_in:admin,root` |
-| **Системные** | | |
-| `validator` | Вызов функции `is_{name}()` | `validator:phone` |
-| `trim` | Обрезать пробелы перед проверкой | `trim` |
+| `json` | Valid JSON string | `json` |
+| `alpha` | Letters only (incl. Cyrillic) | `alpha` |
+| `alphanum` | Letters and digits | `alphanum` |
+| `date` | Valid date | `date`, `date:Y-m-d` |
+| `regexp` | Regular expression | `regexp:/^\d+$/` |
+| `minlen` | Min string length | `minlen:5` |
+| `maxlen` | Max string length | `maxlen:50` |
+| `min` | Min numeric value | `min:10` |
+| `max` | Max numeric value | `max:100` |
+| `same` | Must match another field | `same:password_confirm` |
+| `confirmed` | Must match `{field}_confirmation` | `confirmed` |
+| `in` | Value in list | `in:active,banned` |
+| `not_in` | Value not in list | `not_in:admin,root` |
+| `validator` | Call `is_{name}()` function | `validator:phone` |
 
----
-
-## Кастомные правила
+## Custom Rules
 
 ```php
-$validator = validator($data, $rules);
-
 $validator->addRule('even', function($value, $params, $allValues) {
     return $value % 2 === 0;
 });
-
-// Использование: 'number' => 'required|even'
+// Usage: 'number' => 'required|even'
 ```
 
-Сигнатура callback: `function(mixed $value, array $params, array $allValues): bool|string`
-- `true` — ок
-- `false` — ошибка со стандартным сообщением
-- `string` — ошибка с указанным текстом
+Callback signature: `function(mixed $value, array $params, array $allValues): bool|string`
+- `true` — passes
+- `false` — fails with default message
+- `string` — fails with custom message
 
----
-
-## Пользовательские сообщения
+## Custom Messages
 
 ```php
 $validator->setMessages([
-    'email.required' => 'Пожалуйста, укажите email.',
-    'email.email'    => 'Некорректный формат email.',
-    'age.min'        => 'Возраст должен быть не менее 18 лет.',
+    'email.required' => 'Email is required.',
+    'email.email'    => 'Invalid email format.',
+    'age.min'        => 'Age must be at least 18.',
 ]);
 ```
 
-Также можно указать сообщение прямо в строке правил:
+Or inline in rules:
 ```php
-'email' => 'required|email|message:Укажите корректный email'
+'email' => 'required|email|message:Please enter a valid email'
 ```
 
----
-
-## Получение ошибок
+## Error Handling
 
 ```php
-// Проверка
-$validator->fails();   // true — есть ошибки
-$validator->passes();  // true — ошибок нет
+$validator->fails();      // true if errors exist
+$validator->passes();     // true if no errors
 
-// Все ошибки: [поле => [сообщение1, сообщение2]]
-$errors = $validator->errors();     // короткий алиас
-$errors = $validator->getMessages(); // полное имя
-$errors = $validator->getErrors();   // ещё один алиас
+$errors = $validator->errors();       // short alias
+$errors = $validator->getMessages();  // full name
+$errors = $validator->getErrors();    // another alias
+// Returns: ['email' => ['Error 1', 'Error 2']]
 
-// Первая ошибка
-$msg = $validator->first();          // первая ошибка вообще
-$msg = $validator->first('email');   // первая ошибка поля email
+$msg = $validator->first();           // first error overall
+$msg = $validator->first('email');    // first error for field
 
-// Проверка поля
-$validator->hasError('email');  // true/false
-
-// Список полей с ошибками
-$fields = $validator->failed();  // ['email', 'age']
+$validator->hasError('email');        // true/false
+$fields = $validator->failed();       // ['email', 'age']
 ```
 
----
-
-## Валидированные данные
+## Validated Data
 
 ```php
-// Все поля с правилами (независимо от ошибок — проверьте fails() сначала!)
-$data = $validator->validated();
-
-// Только указанные поля
-$data = $validator->only(['email', 'name']);
-
-// Данные или исключение при ошибках
-$data = $validator->validateOrFail(); // выбрасывает RuntimeException
+$data = $validator->validated();      // fields with rules (regardless of errors)
+$data = $validator->only(['email']);  // specific fields only
+$data = $validator->validateOrFail(); // throws RuntimeException on failure
 ```
 
----
-
-## Повторное использование
+## Reusability
 
 ```php
 $validator = new Validator();
-
-// Меняем данные
 $validator->setValues($newData);
-// Меняем правила
 $validator->setRules($newRules);
-
 $validator->fails();
 ```
 
----
+## i18n
 
-## Справочник методов
-
-| Метод | Описание | Возвращает |
-| :--- | :--- | :--- |
-| `__construct($values, $rules)` | Конструктор | `void` |
-| `make($values, $rules)` | Статический фабричный метод | `Validator` |
-| `setValues($values)` | Заменить данные | `self` |
-| `setRules($rules)` | Заменить правила | `self` |
-| `setMessages($messages)` | Установить сообщения об ошибках | `self` |
-| `addRule($name, $callback)` | Зарегистрировать кастомное правило | `self` |
-| `checkAll()` | Проверить все поля | `bool` |
-| `check($field)` | Проверить одно поле | `bool` |
-| `fails()` | Есть ли ошибки | `bool` |
-| `passes()` | Нет ошибок | `bool` |
-| `errors()` | Все ошибки | `array` |
-| `getMessages()` | Все ошибки (полное имя) | `array` |
-| `getErrors()` | Все ошибки (алиас) | `array` |
-| `first($field?)` | Первая ошибка | `?string` |
-| `getFirstMessage($field)` | Первая ошибка поля | `?string` |
-| `hasError($field)` | Есть ли ошибка у поля | `bool` |
-| `failed()` | Список полей с ошибками | `array` |
-| `validated()` | Валидированные данные | `array` |
-| `only($keys)` | Часть валидированных данных | `array` |
-| `validateOrFail()` | Данные или исключение | `array` |
-
----
-
-## Примечания
-
-1. **i18n:** Если функция `i18n()` существует, сообщения об ошибках берутся через неё. Ключи локализации имеют префикс `validator_` (например, `validator_required`, `validator_email`).
-2. **Кодировка:** Для подсчёта длины строк используется `Str::length()` (UTF-8).
-3. **Остановка на ошибке:** По умолчанию проверка поля останавливается после первой ошибки. Для сбора всех ошибок передайте `false` третьим аргументом конструктора.
-4. **`trim`:** Если указано правило `trim`, значение обрезается до проверки последующих правил и сохраняется обрезанным в `$this->values`. `validated()` вернёт уже обрезанное значение.
+If `i18n()` function exists, error messages use translation keys prefixed with `validator_` (e.g., `validator_required`, `validator_email`). String length uses `Str::length()` (UTF-8 aware).

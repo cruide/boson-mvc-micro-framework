@@ -1,96 +1,91 @@
-# Документация класса Boson\Native (Boson Framework)
+# Native Class Documentation (Boson Framework)
 
-**Версия:** 2.1
+**Version:** 2.1
 
-Класс `Native` — легкий шаблонизатор для PHP-шаблонов (`.phtml`). API частично совместим со Smarty для упрощения миграции.
+Lightweight PHTML template engine. Smarty-compatible API for easy migration.
 
-## Инициализация
+## Initialization
 
 ```php
 $tpl = new Native('/path/to/templates/');
+// Throws NativeException if directory doesn't exist
 ```
 
-Конструктор принимает путь к директории с шаблонами. Если директория не существует — `NativeException`.
+## Template Variables
 
-## Переменные шаблона
-
-### Локальные (`assign`)
+### Local (`assign`)
 
 ```php
-$tpl->assign('title', 'Главная');        // одно значение
-$tpl->assign(['user' => 'Alex', 'role' => 'admin']); // массово
-$tpl->assign('key', null);               // удалить
+$tpl->assign('title', 'Home');
+$tpl->assign(['user' => 'Alex', 'role' => 'admin']); // bulk
+$tpl->assign('key', null);                            // remove
 ```
 
-### Глобальные (`setGlobal`)
+### Global (`setGlobal`)
 
-Статические — доступны во всех экземплярах класса.
+Static — available across all instances.
 
 ```php
 Native::setGlobal('site_name', 'My Site');
 Native::setGlobal(['version' => '1.0']);
-Native::setGlobal('old', null);  // удалить
+Native::setGlobal('old', null);  // remove
+$tpl->assignGlobal('key', 'val'); // instance alias
 ```
 
-Нестатический алиас: `$tpl->assignGlobal('key', 'value')` (совместимость со Smarty).
-
-## Рендеринг
+## Rendering
 
 ### `fetch($file_name, $need_ext?, $xhtml?)`
 
-Рендерит шаблон и возвращает строку.
+Renders template and returns string.
 
-| Параметр | По умолчанию | Описание |
+| Parameter | Default | Description |
 |---|---|---|
-| `$file_name` | — | Имя файла |
-| `$need_ext` | `true` | Авто-добавление `.phtml` |
-| `$xhtml` | `XHTML_CRRECTION_OFF` | XHTML-коррекция |
+| `$file_name` | — | Template filename |
+| `$need_ext` | `true` | Auto-append `.phtml` |
+| `$xhtml` | `XHTML_CRRECTION_OFF` | XHTML correction |
 
 ```php
-$html = $tpl->fetch('index');        // → index.phtml
-$html = $tpl->fetch('custom.tpl', false); // без авто-расширения
+$html = $tpl->fetch('index');              // → index.phtml
+$html = $tpl->fetch('custom.tpl', false);  // without auto-extension
 ```
 
 ### `display($file_name, $xhtml?)`
 
-Рендерит и сразу выводит (`echo`). Отправляет `X-Boson-*` заголовки.
+Renders and outputs directly. Sends `X-Boson-*` headers.
 
-## Управление переменными
-
-### `remove($name)`
-
-Удалить переменную из экземпляра.
-
-### `flushProperties()`
-
-Очистить все локальные переменные экземпляра.
-
-## XHTML-коррекция
-
-Исправляет: атрибуты без кавычек, незакрытые теги `<br>`, `<img>`, `<hr>`, лишние пробелы.
+## Variable Management
 
 ```php
-// Для конкретного вызова:
+$tpl->remove('name');       // remove single variable
+$tpl->flushProperties();    // clear all local variables
+```
+
+## XHTML Correction
+
+Fixes: unquoted attributes, unclosed tags (`<br>`, `<img>`, `<hr>`), extra whitespace.
+
+```php
+// Per-call:
 $tpl->fetch('page', true, Native::XHTML_CRRECTION_ON);
 
-// Глобально:
+// Global:
 Native::$correctXHTML = true;
 ```
 
-## Константы
+## Constants
 
-| Константа | Значение |
+| Constant | Value |
 |---|---|
 | `EXTENSION` | `'phtml'` |
 | `XHTML_CRRECTION_ON` | `true` |
 | `XHTML_CRRECTION_OFF` | `false` |
 
-## Безопасность
+## Security
 
-- `extract()` использует флаг `EXTR_SKIP` — переменные шаблона не могут переопределить существующие переменные (включая суперглобалы).
-- Не передавайте пользовательский ввод в имя файла шаблона без проверки.
+- `extract()` uses `EXTR_SKIP` — template variables cannot override existing variables (including superglobals).
+- Never pass user input directly into template filenames without sanitization.
 
-## Зависимости
+## Dependencies
 
-- `path_correct()` — нормализация путей
-- `send_header_app_info()` — для метода `display()`
+- `path_correct()` — path normalization
+- `send_header_app_info()` — for `display()` method

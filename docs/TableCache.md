@@ -1,65 +1,53 @@
-# Документация класса `TableCache` (Boson Framework)
+# TableCache Documentation (Boson Framework)
 
-**Версия:** 2.1
+**Version:** 2.1
 
-Кеширование на основе таблицы в БД. Значения сериализуются, поддерживается TTL (время жизни). Встроенный in-memory кеш снижает число запросов к БД.
+Database-backed cache. Values are serialized, with TTL support. Built-in in-memory cache reduces DB queries.
 
-## Установка
-
-Перед первым использованием нужно создать таблицу:
+## Installation
 
 ```php
 TableCache::install();
 ```
 
-Создаёт таблицу `{prefix}cache` в БД.
+Creates `{prefix}cache` table.
 
-## Использование
+## Usage
 
-### Глобальные хелперы
+### Global Helpers
 
 ```php
-// Сохранить (значение или callable)
-cache('my_key', $data, 3600);          // на час
-cache('my_key', function() {           // ленивое вычисление
-    return expensiveQuery();
-}, 300);
+// Store (value or callable)
+cache('my_key', $data, 3600);           // 1 hour
+cache('my_key', fn() => expensive(), 300); // lazy
 
-// Получить и удалить
-$data = cache('my_key');               // null если нет или просрочен
+// Retrieve and delete
+$data = cache('my_key');                // null if expired/missing
 
-// Получить или вычислить и сохранить
-$data = cacheRemember('stats', function() {
-    return db()->table('orders')->count();
-}, 600);
+// Get or compute
+$data = cacheRemember('stats', fn() => db()->table('orders')->count(), 600);
 ```
 
-### Статические методы
+### Static Methods
 
-| Метод | Описание |
+| Method | Description |
 |---|---|
-| `install()` | Создать таблицу кеша |
-| `has($key): bool` | Проверить существование (с учётом TTL) |
-| `get($key): mixed` | Получить десериализованное значение |
-| `put($key, $value, $expire?): mixed` | Сохранить значение |
-| `remember($key, $callback, $expire?): mixed` | Получить или вычислить+сохранить |
-| `pull($key): mixed` | Получить и удалить |
-| `forget($key): void` | Удалить |
-| `flush(): void` | Полная очистка |
-| `check(): void` | Удалить просроченные записи (GC) |
+| `install()` | Create cache table |
+| `has($key): bool` | Check existence (accounting for TTL) |
+| `get($key): mixed` | Get unserialized value |
+| `put($key, $value, $expire?): mixed` | Store value |
+| `remember($key, $callback, $expire?): mixed` | Get or compute + store |
+| `pull($key): mixed` | Get and delete |
+| `forget($key): void` | Delete |
+| `flush(): void` | Truncate all |
+| `check(): void` | Remove expired entries (GC) |
 
-## Очистка просроченного
+## Cache Levels
 
-```php
-TableCache::check(); // удаляет все записи с истёкшим TTL
-```
+1. **In-memory** (`$key_has_cache`) — `has()` result cached in instance. Repeated reads don't hit DB.
+2. **Database** — main storage. Values serialized via `serialize()`.
 
-## Уровни кеширования
-
-1. **In-memory** (`$key_has_cache`) — результат `has()` сохраняется в памяти экземпляра. Повторные запросы того же ключа не идут в БД.
-2. **БД** — основное хранилище. Значения сериализуются через `serialize()`.
-
-## Таблица
+## Table Schema
 
 ```sql
 CREATE TABLE `cache` (
@@ -73,21 +61,6 @@ CREATE TABLE `cache` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 ```
 
-## Исключения
+## Exceptions
 
-`TableCacheException` — если таблица не создана (вызывается из `has()`).
-
-## Использование в проекте
-
-```php
-// Auth.php — счётчик попыток входа
-$attempts = (int)cache($key);
-cache($key, $attempts + 1, 900);
-```
-
-## Глобальные функции
-
-| Функция | Аналог |
-|---|---|
-| `cache($key, $value?, $ttl?)` | `TableCache::put()` / `TableCache::pull()` |
-| `cacheRemember($key, $fn, $ttl?)` | `TableCache::remember()` |
+`TableCacheException` — thrown from `has()` if table not created.

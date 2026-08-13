@@ -1,20 +1,18 @@
-# Документация класса `Temp` (Boson Framework)
+# Temp Class Documentation (Boson Framework)
 
-**Версия:** 2.1
+**Version:** 2.1
 
-Работа с временными файлами. Поддерживает сериализацию любых типов, опциональное шифрование и gzip-сжатие.
+Temporary file storage with serialization, optional encryption, and gzip compression.
 
-## Использование
-
-### Запись
+## Usage
 
 ```php
 $temp = new Temp('myfile.tmp');
-$temp->content($data);     // любой сериализуемый тип (массив, объект, скаляр)
-$temp->write();            // сохраняет сериализованные данные
+$temp->content($data);    // any serializable type (array, object, scalar)
+$temp->write();           // serialize + gzip + write
 ```
 
-### С шифрованием
+### With Encryption
 
 ```php
 $temp = new Temp('secure.tmp');
@@ -23,89 +21,69 @@ $temp->encryption()
      ->write();
 ```
 
-### Чтение
+### Reading
 
 ```php
 $temp = new Temp('myfile.tmp');
-$data = $temp->read();  // автоматически десериализует (и расшифрует, если encryption())
+$data = $temp->read();  // auto-deserialize (and decrypt if encryption())
 ```
 
-### Удаление
+### Check & Delete
 
 ```php
-$temp->delete();  // true если файл был, false если нет
-```
-
-### Проверка существования
-
-```php
-if( $temp->exists() ) {
+if ($temp->exists()) {
     $data = $temp->read();
 }
+$temp->delete();  // true if existed, false if not
 ```
 
-### Смена директории
+### Directories
 
 ```php
 $temp = new Temp('file.tmp', '/custom/path/');
-// или после создания:
-$temp->path('/another/path/');
+$temp->path('/another/path/');  // change after creation
 
-// Полный путь:
-echo $temp->filePath();  // /another/path/file.tmp
+echo $temp->filePath();  // full path
 ```
 
-По умолчанию используется `TEMP_DIR`.
+Default: `TEMP_DIR`.
 
-## Статические хелперы
+## Static Helpers
 
-### `Temp::create($filename, $content): Temp`
-Создать и сразу записать:
 ```php
+// Create and write immediately:
 $temp = Temp::create('cache.tmp', ['users' => $users, 'count' => 42]);
-```
 
-### `Temp::pull($filename): mixed`
-Прочитать и сразу удалить:
-```php
+// Read and delete in one call:
 $data = Temp::pull('oneshot.tmp');
-// Файл удалён, данные возвращены
 ```
 
-## Данные
+## Data
 
-Содержимое всегда сериализуется через `serialize()`/`unserialize()` — можно хранить любые сериализуемые типы: массивы, объекты (с `__serialize`), строки, числа.
+Content is always serialized via `serialize()`/`unserialize()` — supports arrays, objects (with `__serialize`), strings, numbers.
 
-## Шифрование
+## Encryption
 
-Метод `encryption()` включает RC4-шифрование через глобальные функции `encrypt()`/`decrypt()`. Должен быть вызван и при записи, и при чтении одного и того же файла.
+`encryption()` enables RC4 encryption via global `encrypt()`/`decrypt()` functions. Must be called for both write and read of the same file.
 
-## Директории
+## Methods
 
-Автоматически создаются при `write()` (через `file_put_gz_content`).
-
-## Исключения
-
-`TempException` — выбрасывается при ошибках записи или если имя файла не указано в конструкторе.
-
-## Методы
-
-| Метод | Описание | Возвращает |
+| Method | Description | Returns |
 |---|---|---|
-| `__construct($name, $dir?)` | Конструктор | `void` |
-| `content($value)` | Установить содержимое | `self` |
-| `write()` | Записать в файл | `bool` |
-| `read()` | Прочитать из файла | `mixed` |
-| `delete()` | Удалить файл | `bool` |
-| `exists()` | Проверить существование | `bool` |
-| `encryption()` | Включить шифрование | `self` |
-| `path($dir)` | Сменить директорию | `self` |
-| `filePath()` | Полный путь к файлу | `string` |
-| `create($name, $content)` | Статический: создать и записать | `Temp` |
-| `pull($name)` | Статический: прочитать и удалить | `mixed` |
+| `__construct($name, $dir?)` | Constructor | `void` |
+| `content($value)` | Set content | `self` |
+| `write()` | Write to file | `bool` |
+| `read()` | Read from file | `mixed` |
+| `delete()` | Delete file | `bool` |
+| `exists()` | Check existence | `bool` |
+| `encryption()` | Enable encryption | `self` |
+| `path($dir)` | Change directory | `self` |
+| `filePath()` | Full file path | `string` |
+| `create($name, $content)` | Static: create + write | `Temp` |
+| `pull($name)` | Static: read + delete | `mixed` |
 
-## Внутренние зависимости
+## Dependencies
 
-- `file_put_gz_content()` / `file_get_gz_content()` — gzip-сжатие при записи/чтении
-- `encrypt()` / `decrypt()` — опциональное шифрование (RC4)
-- `path_correct()` — нормализация путей
+- `file_put_gz_content()` / `file_get_gz_content()` — gzip
+- `encrypt()` / `decrypt()` — optional encryption (RC4)
+- `path_correct()` — path normalization
