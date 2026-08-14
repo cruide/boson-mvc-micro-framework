@@ -397,7 +397,13 @@ abstract class Registry extends \stdClass implements \ArrayAccess, \Countable, \
 
         $json = json_encode($data, $options | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        return ($json === false) ? '{}' : $json;
+        if( $json === false ) {
+            throw new \RuntimeException(
+                'Failed to encode registry to JSON: ' . json_last_error_msg()
+            );
+        }
+
+        return $json;
     }
 
     /**

@@ -120,19 +120,16 @@ final class Input extends Registry
      * ---------------------------------------------------------------------- */
 
     /**
-     * Returns all input data with XSS cleaning.
+     * Returns all input data as-is (without XSS cleaning).
+     *
+     * Values are returned raw so that sensitive fields (passwords, JSON,
+     * structured data) are not corrupted. Escape on output, not on input.
      *
      * @return array<string, mixed>
      */
     public function all(): array
     {
-        $result = [];
-
-        foreach($this->properties as $key => $value) {
-            $result[ $key ] = $this->_xss_clean($value);
-        }
-
-        return $result;
+        return $this->properties;
     }
 
     /**
@@ -653,28 +650,45 @@ final class Input extends Registry
      */
     public function ip()
     {
-        $candidates = [
-            'HTTP_CLIENT_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_FORWARDED',
-            'HTTP_X_CLUSTER_CLIENT_IP',
-            'HTTP_FORWARDED_FOR',
-            'HTTP_FORWARDED',
-            'REMOTE_ADDR',
-        ];
+        // Only REMOTE_ADDR is trusted by default; forwarded headers are
+        // honored only when the request comes from a configured trusted proxy.
+        $remote = $_SERVER['REMOTE_ADDR'] ?? null;
 
-        foreach($candidates as $key) {
-            if( empty($_SERVER[$key]) ) {
-                continue;
-            }
+        if( !empty($remote) && function_exists('cfg') ) {
+            $trusted = cfg('config', 'trusted_proxies');
 
-            foreach(explode(',', (string)$_SERVER[$key]) as $ip) {
-                $ip = trim($ip);
-                
-                if( filter_var($ip, FILTER_VALIDATE_IP) !== false ) {
-                    return $ip;
+            if( !empty($trusted) ) {
+                $trusted = array_map('trim', explode(',', (string)$trusted));
+
+                if( in_array($remote, $trusted, true) ) {
+                    $candidates = [
+                        'HTTP_X_FORWARDED_FOR',
+                        'HTTP_CLIENT_IP',
+                        'HTTP_X_FORWARDED',
+                        'HTTP_X_CLUSTER_CLIENT_IP',
+                        'HTTP_FORWARDED_FOR',
+                        'HTTP_FORWARDED',
+                    ];
+
+                    foreach($candidates as $key) {
+                        if( empty($_SERVER[$key]) ) {
+                            continue;
+                        }
+
+                        foreach(explode(',', (string)$_SERVER[$key]) as $ip) {
+                            $ip = trim($ip);
+
+                            if( filter_var($ip, FILTER_VALIDATE_IP) !== false ) {
+                                return $ip;
+                            }
+                        }
+                    }
                 }
             }
+        }
+
+        if( !empty($remote) && filter_var($remote, FILTER_VALIDATE_IP) !== false ) {
+            return $remote;
         }
 
         return '0.0.0.0';

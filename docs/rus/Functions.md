@@ -83,14 +83,11 @@
 ### `is_name($str)`
 Буквы, цифры, пробелы, апостроф (для имён).
 
-### `is_varible_name($str)`
+### `is_variable_name($str)`
 Валидное имя переменной PHP: `[a-z0-9_]+`, не начинается с цифры.
 
 ### `is_action_name($str)`
 Валидное имя экшена: `[a-z0-9_\-]+`, не начинается с цифры/подчёркивания/дефиса.
-
-### `is_even($num)`
-Проверка на чётность.
 
 ### `is_uuid($uuid)`
 Валидация UUID v4.
@@ -100,9 +97,6 @@
 
 ### `is_url_exists($url)`
 Проверка: отвечает ли URL (через `get_headers()`).
-
-### `email_exists($email, $sender?)`
-SMTP-верификация email (подключается к MX-серверу, проверяет RCPT TO).
 
 ### `is_ajax()`
 Проверка AJAX-запроса (заголовки `X-Requested-With`, `Accept`).
@@ -152,7 +146,7 @@ SMTP-верификация email (подключается к MX-серверу
 Генерация случайного пароля из букв и цифр.
 
 ### `encrypt($string, $key?)`
-AES-256-GCM шифрование. Ключ по умолчанию: `md5('BOSON')`.
+AES-256-GCM шифрование. Ключ по умолчанию: `boson_encryption_key()` (env `BOSON_APP_KEY` → конфиг `encryption_key` → legacy-фоллбэк).
 
 ### `decrypt($cipher, $key?)`
 Дешифровка: AES-256-GCM (v2) + RC4 fallback для старых данных.
@@ -222,9 +216,6 @@ CORS-заголовки. Использует `config.ini:cors_origins` для �
 ---
 
 ## Числа и вычисления
-
-### `fract($num)`
-Дробная часть числа (целым числом).
 
 ### `float_extract($num)`
 Разделение float на целую и дробную части.

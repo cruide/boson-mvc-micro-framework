@@ -51,7 +51,34 @@
 // -----------------------------------------------------------------------------
   function dbCfg($key = null)
   {
-	  return cfg('database', $key);
+	  $config = cfg('database');
+
+	  if( !is_object($config) ) {
+		  return null;
+	  }
+
+	  // Resolve the connection section the same way Eloquent does:
+	  // the "default" section if present, otherwise the first registered one.
+	  if( $config->has('default') ) {
+		  $section = $config->get('default');
+	  } else {
+		  $sections = $config->toArray();
+		  $section  = !empty($sections) ? reset($sections) : null;
+	  }
+
+	  if( $key === null ) {
+		  return $section;
+	  }
+
+	  if( $section instanceof \Boson\Abstracts\Registry ) {
+		  return $section->has($key) ? $section->get($key) : null;
+	  }
+
+	  if( is_array($section) ) {
+		  return $section[ $key ] ?? null;
+	  }
+
+	  return null;
   }
 // -----------------------------------------------------------------------------
   function cache($key, $value = null, $expire = UNIXTIME_HOUR)

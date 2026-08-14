@@ -39,13 +39,11 @@
 | `is_alpha($str)` | Letters only |
 | `is_date($str)` | Format `DD.MM.YYYY` |
 | `is_name($str)` | Letters, digits, spaces, apostrophe |
-| `is_varible_name($str)` | Valid PHP variable name |
+| `is_variable_name($str)` | Valid PHP variable name |
 | `is_action_name($str)` | Valid action name |
-| `is_even($num)` | Even check |
 | `is_uuid($uuid)` | UUID v4 validation |
 | `is_ipaddress($str)` | IP address validation |
 | `is_url_exists($url)` | URL responds (via `get_headers()`) |
-| `email_exists($email, $from?)` | SMTP verification |
 | `is_ajax()` | AJAX request check |
 
 ## Strings
@@ -69,7 +67,7 @@
 | `password_crypt($pass)` | bcrypt via `password_hash(PASSWORD_BCRYPT)` |
 | `password_verify_legacy($pass, $hash)` | Legacy MD5+crypt check |
 | `password_generate($len?)` | Random password |
-| `encrypt($data, $key?)` | AES-256-GCM encryption |
+| `encrypt($data, $key?)` | AES-256-GCM encryption (key via `boson_encryption_key()`) |
 | `decrypt($data, $key?)` | Decrypt (AES-256-GCM + RC4 fallback) |
 | `str_base64_encrypt($s, $key?, $gz?)` | Encrypt + base64 (+ gzip) |
 | `str_base64_decrypt($s, $key?, $gz?)` | Reverse |
@@ -104,7 +102,6 @@
 
 | Function | Description |
 |---|---|
-| `fract($num)` | Fractional part |
 | `float_extract($num)` | Split float to parts |
 | `percentage($total, $val)` | Percentage |
 | `num2word($n, $words)` | Plural form: `num2word(5, ['year','years'])` → `'years'` |

@@ -175,7 +175,9 @@ class TableCache
     public static function install()
     {
         if( !orm()->hasTable(self::$table) ) {
-            $table = dbCfg('prefix') . self::$table;
+            // Use the connection's real table prefix (config may nest settings
+            // under a connection section, so dbCfg('prefix') is unreliable).
+            $table = orm()->db()->getTablePrefix() . self::$table;
             
             orm()->db()->query("
                 CREATE TABLE IF NOT EXISTS `{$table}` (

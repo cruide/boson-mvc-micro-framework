@@ -13,27 +13,58 @@ class Mcp
     }
 
     /**
+     * Shared server-info payload for the initial handshake.
+     */
+    protected function serverInfo(): array
+    {
+        return [
+            'protocolVersion' => '2024-11-05',
+            'capabilities'    => [
+                'tools'     => new \stdClass(),
+                'resources' => new \stdClass(),
+            ],
+            'serverInfo'      => [
+                'name'    => 'Boson MCP server',
+                'version' => '1.0.0',
+            ],
+        ];
+    }
+
+    /**
+     * Build a JSON-RPC success response.
+     */
+    protected function jsonrpcResult(array $request, array $result): string
+    {
+        return json_response([
+            'jsonrpc' => '2.0',
+            'id'      => !empty($request['id']) ? $request['id'] : 0,
+            'result'  => $result,
+        ]);
+    }
+
+    /**
+     * Build a JSON-RPC error response.
+     */
+    protected function jsonrpcError(array $request, int $code, string $message, int $status = 200): string
+    {
+        return json_response([
+            'jsonrpc' => '2.0',
+            'id'      => !empty($request['id']) ? $request['id'] : 0,
+            'error'   => [
+                'code'    => $code,
+                'message' => $message,
+            ],
+        ], $status);
+    }
+
+    /**
      * POST /mcp
      */
     public function index()
     {
         $request = input()->json() ?: [];
 
-        return json_response([
-            'jsonrpc' => '2.0',
-            'id'      => !empty($request['id']) ? $request['id'] : 0,
-            'result'  => [
-                'protocolVersion' => '2024-11-05',
-                'capabilities'    => [
-                    'tools'     => new \stdClass(),
-                    'resources' => new \stdClass(),
-                ],
-                'serverInfo'      => [
-                    'name'    => 'Boson MCP server',
-                    'version' => '1.0.0',
-                ],
-            ],
-        ]);
+        return $this->jsonrpcResult($request, $this->serverInfo());
     }
 
     /**
@@ -44,21 +75,7 @@ class Mcp
     {
         $request = input()->json() ?: [];
 
-        return json_response([
-            'jsonrpc' => '2.0',
-            'id'      => !empty($request['id']) ? $request['id'] : 0,
-            'result'  => [
-                'protocolVersion' => '2024-11-05',
-                'capabilities'    => [
-                    'tools'     => new \stdClass(),
-                    'resources' => new \stdClass(),
-                ],
-                'serverInfo'      => [
-                    'name'    => 'Boson MCP server',
-                    'version' => '1.0.0',
-                ],
-            ],
-        ]);
+        return $this->jsonrpcResult($request, $this->serverInfo());
     }
 
     /**
@@ -68,11 +85,8 @@ class Mcp
     {
         $request = input()->json() ?: [];
 
-        return json_response([
-            'jsonrpc' => '2.0',
-            'id'      => !empty($request['id']) ? $request['id'] : 0,
-            'result'  => [
-                'tools' => [
+        return $this->jsonrpcResult($request, [
+            'tools' => [
                     [
                         'name'        => 'list_user',
                         'description' => 'Get a list of users with filtering by name and email',
@@ -149,7 +163,6 @@ class Mcp
                         ],
                     ],
                 ],
-            ],
         ]);
     }
 
@@ -164,14 +177,7 @@ class Mcp
         $arguments = $request['arguments'] ?? $request['params']['arguments'] ?? [];
 
         if (empty($request['name'])) {
-            return json_response([
-                'jsonrpc' => '2.0',
-                'id'      => $request['id'] ?? 0,
-                'error'   => [
-                    'code'    => -32602,
-                    'message' => 'Invalid params: tool name is required',
-                ],
-            ], 400);
+            return $this->jsonrpcError($request, -32602, 'Invalid params: tool name is required', 400);
         }
 
         try {
@@ -197,47 +203,23 @@ class Mcp
                     break;
 
                 default:
-                    return json_response([
-                        'jsonrpc' => '2.0',
-                        'id'      => $request['id'] ?? 0,
-                        'error'   => [
-                            'code'    => -32601,
-                            'message' => "Tool not found: {$request['name']}",
-                        ],
-                    ], 404);
+                    return $this->jsonrpcError($request, -32601, "Tool not found: {$request['name']}", 404);
             }
 
-            return json_response([
-                'jsonrpc' => '2.0',
-                'id'      => $request['id'] ?? 0,
-                'result'  => [
-                    'content' => [
-                        [
-                            'type' => 'text',
-                            'text' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-                        ],
+            return $this->jsonrpcResult($request, [
+                'content' => [
+                    [
+                        'type' => 'text',
+                        'text' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
                     ],
                 ],
             ]);
 
         } catch (\InvalidArgumentException $e) {
-            return json_response([
-                'jsonrpc' => '2.0',
-                'id'      => $request['id'] ?? 0,
-                'error'   => [
-                    'code'    => $e->getCode() ?: -32602,
-                    'message' => $e->getMessage(),
-                ],
-            ], 400);
+            return $this->jsonrpcError($request, $e->getCode() ?: -32602, $e->getMessage(), 400);
         } catch (\Exception $e) {
-            return json_response([
-                'jsonrpc' => '2.0',
-                'id'      => $request['id'] ?? 0,
-                'error'   => [
-                    'code'    => -32603,
-                    'message' => 'Internal error: ' . $e->getMessage(),
-                ],
-            ], 500);
+            error_log('MCP internal error: ' . (string)$e);
+            return $this->jsonrpcError($request, -32603, 'Internal error', 500);
         }
     }
 
@@ -362,7 +344,8 @@ class Mcp
             throw $e; // Rethrow our validation exceptions
         } catch (\Exception $e) {
             db()->rollBack();
-            throw new \Exception('Error creating user: ' . $e->getMessage(), -32603);
+            error_log('MCP create_user error: ' . (string)$e);
+            throw new \Exception('Error creating user', -32603);
         }
 
         $user->load('profile');

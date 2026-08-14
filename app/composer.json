@@ -1,6 +1,7 @@
 {
     "require": {
         "php": "^8.2",
+        "ext-mbstring": "*",
         "illuminate/database": "9.*",
         "illuminate/events": "9.*",
         "doctrine/dbal": "^4.2",

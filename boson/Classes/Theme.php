@@ -337,6 +337,10 @@ final class Theme
         $this->engine->assign('css_url'    , THEMES_URL . "/{$this->_theme_name}/css");
         $this->engine->assign('images_url' , THEMES_URL . "/{$this->_theme_name}/images");
 
+        if( function_exists('csrf_token') ) {
+            $this->engine->assign('csrf_token', csrf_token());
+        }
+
         $this->_globals_set = true;
 
         return $this;
@@ -352,14 +356,18 @@ final class Theme
             $this->setGlobals();
         }
 
-        // Flash messages (new session()->flash() API + old one for compatibility)
-        foreach(['message', 'error'] as $key) {
-            $flash = session()->flash($key);
-            if( $flash !== null ) {
-                $this->engine->assign('redirect_' . $key, $flash);
-            } elseif( session()->has('redirect_' . $key) ) {
-                $this->engine->assign('redirect_' . $key, session()->get('redirect_' . $key));
-                session()->remove('redirect_' . $key);
+        // Flash messages (new session()->flash() API + old one for compatibility).
+        // Only consume them for layout-rendered (HTML) responses; JSON responses
+        // should not burn the flash in vain.
+        if( $this->render ) {
+            foreach(['message', 'error'] as $key) {
+                $flash = session()->flash($key);
+                if( $flash !== null ) {
+                    $this->engine->assign('redirect_' . $key, $flash);
+                } elseif( session()->has('redirect_' . $key) ) {
+                    $this->engine->assign('redirect_' . $key, session()->get('redirect_' . $key));
+                    session()->remove('redirect_' . $key);
+                }
             }
         }
 

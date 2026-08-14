@@ -46,6 +46,7 @@ if( !is_dir(CONTENT_DIR) ) {
 
 require('Classes/Eloquent.php');
 require('Abstracts/EloquentModel.php');
+require('Casts/EncryptedCast.php');
 
 if( is_dir(LIBRARY_DIR) ) {
     foreach(@glob(LIBRARY_DIR . DIR_SEP . '*.php') as $item) {

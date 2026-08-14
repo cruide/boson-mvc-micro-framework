@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="<?=csrf_token()?>">
         <meta name="author" content="Tishchenko Alexander">
 
         <title>Пример APP на Boson</title>
@@ -92,6 +93,9 @@
 
         <script type="text/javascript" src="<?=$js_url?>/bootstrap.min.js"></script>
         <script type="text/javascript">
+        $.ajaxSetup({
+            headers: { 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content') }
+        });
         var jsonRequest = function(url, params, callback) {
             if( typeof(url) == 'undefined' || url == '' ) {
                 return;

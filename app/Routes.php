@@ -10,7 +10,6 @@ router()->whereAlphaNumeric('query');
 
 router()->get([
 	['/', 'Index@index'],
-	['/register', 'Index@register'],
 	['/install', 'Install@index'],
     ['/routes', 'Index@routes'],
 ]);

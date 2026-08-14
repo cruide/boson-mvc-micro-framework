@@ -55,34 +55,39 @@
   */
   function get_ip_address()
   {
+	  // Only REMOTE_ADDR is trusted by default. Forwarded headers are honored
+	  // only when the request comes from a configured trusted proxy.
+	  $remote = $_SERVER['REMOTE_ADDR'] ?? '';
 
-	  if( !empty($_SERVER['REMOTE_ADDR']) && !empty($_SERVER['HTTP_CLIENT_IP']) ) {
-		  $ipaddr = $_SERVER['HTTP_CLIENT_IP'];
-		  
-	  } else if( !empty($_SERVER['HTTP_CLIENT_IP']) ) {
-		  $ipaddr = $_SERVER['HTTP_CLIENT_IP'];
-		  
-	  } else if( !empty($_SERVER['HTTP_X_FORWARDED_FOR']) ) {
-		  $ipaddr = $_SERVER['HTTP_X_FORWARDED_FOR'];
-		  
-	  } else {
-		  $ipaddr = $_SERVER['REMOTE_ADDR'];
+	  if( !empty($remote) && function_exists('cfg') ) {
+		  $trusted = cfg('config', 'trusted_proxies');
+
+		  if( !empty($trusted) ) {
+			  $trusted = array_map('trim', explode(',', (string)$trusted));
+
+			  if( in_array($remote, $trusted, true) ) {
+				  foreach(['HTTP_X_FORWARDED_FOR', 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED'] as $header) {
+					  if( empty($_SERVER[$header]) ) {
+						  continue;
+					  }
+
+					  foreach(explode(',', (string)$_SERVER[$header]) as $ip) {
+						  $ip = trim($ip);
+
+						  if( filter_var($ip, FILTER_VALIDATE_IP) !== false ) {
+							  return $ip;
+						  }
+					  }
+				  }
+			  }
+		  }
 	  }
 
-	  if( $ipaddr === false ) {
+	  if( filter_var($remote, FILTER_VALIDATE_IP) === false ) {
 		  return '0.0.0.0';
 	  }
 
-	  if( strstr($ipaddr, ',') ) {
-		  $x      = explode(',', $ipaddr);
-		  $ipaddr = end( $x );
-	  }
-
-	  if( filter_var($ipaddr, FILTER_VALIDATE_IP) === false ) {
-		  $ipaddr = '0.0.0.0';
-	  }
-
-	  return $ipaddr;
+	  return $remote;
   }
 // -----------------------------------------------------------------------------
   /**
@@ -145,39 +150,6 @@
 	  return $str;
   }
 // -----------------------------------------------------------------------------
-  /**
-  * Check if the number is even
-  */
-  function is_even($num)
-  {
-	  if( !is_numeric($num) ) {
-          return false;
-      }
-      
-	  if( !preg_match('/[\.]/s', $num) ) {
-		  return ( fract($num) & 1 ) ? false : true;
-          
-	  } else {
-		  return ( $num & 1 ) ? false : true;
-	  }
-  }
-// -----------------------------------------------------------------------------
-  /**
-  * extract the fractional part of a fractional number
-  *
-  * @param mixed $num
-  * @return mixed
-  */
-  function fract($num)
-  {
-	  if( is_numeric($num) ) {
-		  $num -= floor( (float)$num );
-		  return (int)str_replace('0.', '', (string)$num);
-	  }
-
-	  return null;
-  }
-// -----------------------------------------------------------------------------
   function float_extract($num)
   {
 	  return ( is_float($num) ) ? explode('.', (string)$num) : false;
@@ -219,9 +191,9 @@
   *
   * @return string $lenght
   */
-  function salt_generation( $lenght = 18 )
+  function salt_generation( $length = 18 )
   {
-	  return substr( sha1( random_bytes(32) ), 0, $lenght );
+	  return substr( sha1( random_bytes(32) ), 0, $length );
   }
 // -----------------------------------------------------------------------------
   /**
@@ -275,6 +247,36 @@
   }
 // -----------------------------------------------------------------------------
   /**
+  * Returns the key used for reversible encryption (AES-256-GCM / RC4).
+  *
+  * Resolution order:
+  *   1. BOSON_APP_KEY environment variable
+  *   2. `encryption_key` in config.ini
+  *   3. legacy fallback (kept for backward compatibility with data
+  *      encrypted before a real key was configured)
+  *
+  * @return string
+  */
+  function boson_encryption_key()
+  {
+      $key = getenv('BOSON_APP_KEY');
+
+      if( !empty($key) ) {
+          return (string)$key;
+      }
+
+      if( function_exists('cfg') ) {
+          $key = cfg('config', 'encryption_key');
+
+          if( !empty($key) ) {
+              return (string)$key;
+          }
+      }
+
+      return md5('BOSON');
+  }
+// -----------------------------------------------------------------------------
+  /**
   * Reversible encryption method (AES-256-GCM)
   *
   * @param mixed $string
@@ -282,7 +284,7 @@
   */
   function encrypt($string, $key = null)
   {
-	  $key = (null === $key) ? md5('BOSON') : (string)$key;
+	  $key = (null === $key) ? boson_encryption_key() : (string)$key;
 	  $iv  = random_bytes(16);
 	  $ciphertext = openssl_encrypt((string)$string, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag);
 
@@ -298,7 +300,7 @@
   */
   function decrypt($cipher, $key = null)
   {
-	  $key = (null === $key) ? md5('BOSON') : (string)$key;
+	  $key = (null === $key) ? boson_encryption_key() : (string)$key;
 
 	  if( strlen($cipher) > 1 && $cipher[0] === "\x02" ) {
 		  // AES-256-GCM
@@ -327,7 +329,7 @@
   function legacy_rc4_crypt($cipher, $key)
   {
 	  $s   = [];
-	  $key = (null === $key) ? md5('BOSON') : (string)$key;
+	  $key = (null === $key) ? boson_encryption_key() : (string)$key;
 
 	  for( $i = 0; $i < 256; $i++ ) {
 		  $s[$i] = $i;
@@ -509,7 +511,7 @@
 	  return true;
   }
 // -----------------------------------------------------------------------------
-  function is_varible_name($str)
+  function is_variable_name($str)
   {
 	  if( !isset($str)
 	   || !is_scalar($str)
@@ -538,7 +540,7 @@
 // -----------------------------------------------------------------------------
   function is_date($str)
   {
-	  if( empty($str) || !is_scalar($str) || !preg_match('%^(0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.](19|20)[0-9]{2}+$%', (string)$str) ) {
+	  if( empty($str) || !is_scalar($str) || !preg_match('%^(0[1-9]|[12][0-9]|3[01])[- /.](0[1-9]|1[012])[- /.][0-9]{4}$%', (string)$str) ) {
 		  return false;
 	  }
 
@@ -594,9 +596,9 @@
    *   router()->redirect('users.show', ['id' => 5])  → named route
    *
    * @param string|array|null $data   URL, array or null (to the home page)
-   * @param int  $redirect_status     HTTP status (301 by default)
+   * @param int  $redirect_status     HTTP status (302 by default)
    */
-  function redirect($data = null, $redirect_status = 301)
+  function redirect($data = null, $redirect_status = 302)
   {
       $url  = BASE_URL;
 
@@ -712,7 +714,7 @@
 			  header(CONTENT_TYPE_JSON);
 			  
 			  exit(
-				  json_encode($message)
+				  json_encode($message, JSON_UNESCAPED_UNICODE)
 			  );
 		  }
 	  }
@@ -793,7 +795,7 @@
 			200 => '200 OK',
 			201 => '201 Created',
 			202 => '202 Accepted',
-			203 => '203 Non-SB_Authoritative Information',
+			203 => '203 Non-Authoritative Information',
 			204 => '204 No Content',
 			205 => '205 Reset Content',
 			206 => '206 Partial Content',
@@ -814,7 +816,7 @@
 			404 => '404 Not Found',
 			405 => '405 Method Not Allowed',
 			406 => '406 Not Acceptable',
-			407 => '407 Proxy nCore_Authentication Required',
+			407 => '407 Proxy Authentication Required',
 			408 => '408 Request Timeout',
 			409 => '409 Conflict',
 			410 => '410 Gone',
@@ -912,17 +914,11 @@
 // -----------------------------------------------------------------------------
   function rating_stars( $rating )
   {
-	  $_      = '';
-	  $rating = round( floatval($rating) );
+	  $rating = (int)round( floatval($rating) );
 
 	  if( empty($rating) ) return '-';
 
-	  while( $rating > 0 ) {
-		  $_ .= '&#9733;';
-		  $rating--;
-	  }
-
-	  return $_;
+	  return str_repeat('&#9733;', $rating);
   }
 // -----------------------------------------------------------------------------
   function get_file_extension($filename)
@@ -1426,87 +1422,6 @@
 	  return date('Y', $utime) . DIR_SEP . date('m', $utime) . DIR_SEP . date('d', $utime);
   }
 // -----------------------------------------------------------------------------
-  function email_exists($email, $sender_email = null)
-  {
-	  
-	  if( !is_email($email) ) {
-		  return false;
-	  }
-	  
-	  $code    = 0;
-	  $data    = [];
-	  $ehlo    = $_SERVER['SERVER_NAME'];
-	  $from    = (!empty($sender_email) && is_email($sender_email)) ? $sender_email : "info@{$ehlo}";
-	  $curdate = date('D, d F Y H:i:s O');
-
-	  list($user, $domain) = explode('@', $email);
-
-	  $records = dns_get_record($domain, DNS_MX);
-	  
-	  if( !is_array($records) ) {
-		  return false;
-	  }
-	  
-	  $records = reset( $records );
-	 
-	  if( !empty($records['target']) ) {
-		  $host = $records['target'];
-	  } else {
-		  return false;
-	  }
-
-	  if( ($fp = @fsockopen($host, 25, $errno, $errstr, 2)) ) {
-		  stream_set_timeout($fp, 2);
-		  $data['CONNECT'] = fread($fp, 2048);
-		  
-		  fputs($fp, "EHLO {$ehlo}\r\n");
-		  $data["EHLO {$ehlo}"] = fread($fp, 2048);
-
-		  fputs($fp, "MAIL FROM: <{$from}>\r\n");
-		  $data["MAIL FROM: <{$from}>"] = fread($fp, 2048);
-
-		  $_ = substr($data["MAIL FROM: <{$from}>"], 0, 3);
-		  
-		  if( $_ != '250' && $_ != '251' ) {
-			  fputs($fp, "QUIT\r\n");
-			  fclose($fp);
-			  
-			  return false;
-		  }
-		  
-		  fputs($fp, "RCPT TO: <{$email}>\r\n");
-		  $data["RCPT TO: <{$email}>"] = fread($fp, 2048);
-
-		  $_ = substr($data["RCPT TO: <{$email}>"], 0, 3);
-		  
-		  if( $_ != '250' && $_ != '251' ) {
-			  fputs($fp, "QUIT\r\n");
-			  fclose($fp);
-			  
-			  return false;
-		  }
-		  
-		  fputs($fp, "DATA\r\n");
-		  $data['DATA'] = fread($fp, 2048);
-		  
-		  fputs($fp, "Date: {$curdate}\r\nSubject: E-Mail address test message\r\nFrom: {$from}\r\nTo: {$email}\r\n\r\nThis email is the verification for your email address. Please do not reply to it.\r\nAlso, we apologize if this letter caused you inconvenience.\r\n.\r\n");
-		  $data['DATA_END'] = fread($fp, 2048);
-		  
-		  fputs($fp, "QUIT\r\n");
-		  $data['QUIT'] = fgets($fp);
-		  
-		  fclose($fp);
-		  
-		  $_ = substr($data['DATA_END'], 0, 3);
-		  
-		  if( $_ == '250' || $_ == '221' ) {
-			  return true;
-		  }
-	  }
-	  
-	  return false;
-  }
-// -----------------------------------------------------------------------------
   function date_week_name($stamp, $full = false)
   {
 	  $weeks = $full ? ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
@@ -1557,6 +1472,10 @@
   */
   function percentage($quantity, $value)
   {
+      if( empty($quantity) ) {
+          return 0;
+      }
+      
       return round( 100 * ($value / $quantity) );
   }
   

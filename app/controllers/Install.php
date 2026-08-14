@@ -7,8 +7,6 @@ class Install
 {
 	public function index()
 	{
-		$prefix = dbCfg('prefix');
-
 		if( !orm()->hasTable('users') ) {
 			schema()->create('users', function(Blueprint $table) {
 				$table->increments('id');
@@ -57,6 +55,8 @@ class Install
 			});
 		}
 		
+        \Boson\TableCache::install();
+        
 		return view('install/success'); 
 	}
 }

@@ -11,6 +11,6 @@ class Password extends \Boson\Abstracts\EloquentModel
     ];
 
     protected $casts = [
-        'password' => 'encrypted',
+        'password' => \Boson\Casts\EncryptedCast::class,
     ];
 }

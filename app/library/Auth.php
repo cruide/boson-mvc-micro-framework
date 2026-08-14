@@ -35,9 +35,12 @@ final class Auth
                                ->first();
 
         if( $userFromSession ) {
-            // Update the activity timestamp
-            $userFromSession->unixtime = time();
-            $userFromSession->save();
+            // Update the activity timestamp at most once per minute to avoid
+            // an unnecessary DB write on every request.
+            if( time() - (int)$userFromSession->unixtime >= 60 ) {
+                $userFromSession->unixtime = time();
+                $userFromSession->save();
+            }
 
             $this->authorized = true;
             $this->user       = $userFromSession;

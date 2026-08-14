@@ -121,8 +121,6 @@ class App
         $method = router()->getMethodName();
         $params = router()->getParams();
 
-        cors();
-
         $this->runHooks('beforeRequest');
 
         $this->checkCsrf();
